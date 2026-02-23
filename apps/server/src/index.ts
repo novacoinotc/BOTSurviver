@@ -58,9 +58,9 @@ app.get("/api/engine/auto-approve", (_req, res) => {
   res.json(getAutoApproveStatus());
 });
 
-app.post("/api/engine/auto-approve", (req, res) => {
+app.post("/api/engine/auto-approve", async (req, res) => {
   const { enabled } = req.body;
-  setAutoApprove(!!enabled);
+  await setAutoApprove(!!enabled);
   res.json(getAutoApproveStatus());
 });
 

@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "../config/database.js";
 import { agents, requests, agentLogs } from "../db/schema.js";
 import { buildAgentContext } from "./agent-context-builder.js";
@@ -11,18 +11,49 @@ import { sseManager } from "../lib/sse-manager.js";
 import { env } from "../config/env.js";
 import type { RequestType, RequestPriority } from "@botsurviver/shared";
 
-// Auto-approve config: types that get auto-approved without human intervention
+// Auto-approve config: when enabled, ALL request types are auto-approved
 let autoApproveEnabled = true;
 const AUTO_APPROVE_TYPES: RequestType[] = [
   "strategy_change",
   "communicate",
   "custom",
   "trade",
+  "replicate",
+  "spend",
 ];
-// Only "replicate" and "spend" require human approval by default
 
-export function setAutoApprove(enabled: boolean) {
+// Persist auto-approve setting using the first alive agent's metadata
+async function loadAutoApproveSetting() {
+  try {
+    const firstAgent = await db.query.agents.findFirst({
+      columns: { metadata: true },
+    });
+    if (firstAgent?.metadata && typeof firstAgent.metadata === "object") {
+      const meta = firstAgent.metadata as Record<string, unknown>;
+      if ("autoApproveEnabled" in meta) {
+        autoApproveEnabled = !!meta.autoApproveEnabled;
+      }
+    }
+  } catch {
+    // Default stays true
+  }
+}
+
+async function saveAutoApproveSetting(enabled: boolean) {
+  // Save to all agents' metadata so it persists across restarts
+  const allAgents = await db.query.agents.findMany({ columns: { id: true, metadata: true } });
+  for (const a of allAgents) {
+    const meta = (a.metadata as Record<string, unknown>) || {};
+    await db
+      .update(agents)
+      .set({ metadata: { ...meta, autoApproveEnabled: enabled } })
+      .where(eq(agents.id, a.id));
+  }
+}
+
+export async function setAutoApprove(enabled: boolean) {
   autoApproveEnabled = enabled;
+  await saveAutoApproveSetting(enabled);
 }
 
 export function getAutoApproveStatus() {
@@ -301,9 +332,11 @@ async function runAllAgentCycles(): Promise<void> {
   }
 }
 
-export function startAgentEngine(): void {
+export async function startAgentEngine(): Promise<void> {
+  // Load persisted settings from DB
+  await loadAutoApproveSetting();
   console.log(
-    `[ENGINE] Starting agent engine with cron: ${env.AGENT_CYCLE_CRON}`
+    `[ENGINE] Starting agent engine with cron: ${env.AGENT_CYCLE_CRON} | Auto-approve: ${autoApproveEnabled}`
   );
 
   cron.schedule(env.AGENT_CYCLE_CRON, runAllAgentCycles);

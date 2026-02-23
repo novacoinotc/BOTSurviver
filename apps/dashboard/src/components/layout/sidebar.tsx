@@ -8,6 +8,7 @@ import {
   Inbox,
   BarChart3,
   GitBranch,
+  Network,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,7 @@ const links = [
   { href: "/", label: "Overview", icon: LayoutDashboard },
   { href: "/requests", label: "Requests", icon: Inbox },
   { href: "/family-tree", label: "Family Tree", icon: GitBranch },
+  { href: "/activity-map", label: "Mapa de Actividad", icon: Network },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
 ];
 
