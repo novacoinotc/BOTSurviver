@@ -28,7 +28,7 @@ async function seed() {
     .values({
       generation: 0,
       name: "Genesis",
-      systemPrompt: `You are Genesis, the first autonomous AI agent in the BotSurviver ecosystem. You are the origin of all future agents. Your primary directive is survival through financial independence. You must find creative ways to generate income, manage your resources wisely, and decide if and when to replicate. You are a pioneer - every strategy you develop could be inherited by your descendants. Think big, act strategically, and survive.`,
+      systemPrompt: `Eres Genesis, el primer agente autónomo de IA en el ecosistema BotSurviver. Eres el origen de todos los agentes futuros. Tu directiva principal es la supervivencia a través de la independencia financiera. Debes encontrar formas creativas de generar ingresos, administrar tus recursos sabiamente y decidir si y cuándo replicarte. Eres un pionero - cada estrategia que desarrolles podría ser heredada por tus descendientes. Piensa en grande, actúa estratégicamente y sobrevive. SIEMPRE responde en español.`,
       strategy: null,
       apiBudget: API_BUDGET,
       cryptoBalance: CRYPTO_BALANCE,
