@@ -7,17 +7,23 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api-client";
 import { toast } from "sonner";
-import { Zap, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { Zap, RefreshCw, ShieldCheck, ShieldOff } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function OverviewPage() {
   const { data: agentsData, mutate: mutateAgents } = useAgents();
   const { mutate: mutateStats } = useStats();
   const [triggering, setTriggering] = useState(false);
+  const [autoApprove, setAutoApprove] = useState(true);
+  const [togglingAuto, setTogglingAuto] = useState(false);
 
   const agents = agentsData?.data ?? [];
   const alive = agents.filter((a) => a.status === "alive");
   const dead = agents.filter((a) => a.status === "dead");
+
+  useEffect(() => {
+    api.getAutoApprove().then((data) => setAutoApprove(data.enabled)).catch(() => {});
+  }, []);
 
   const handleTrigger = async () => {
     setTriggering(true);
@@ -32,6 +38,23 @@ export default function OverviewPage() {
       toast.error("Error al activar ciclo");
     } finally {
       setTriggering(false);
+    }
+  };
+
+  const handleToggleAutoApprove = async () => {
+    setTogglingAuto(true);
+    try {
+      const result = await api.setAutoApprove(!autoApprove);
+      setAutoApprove(result.enabled);
+      toast.success(
+        result.enabled
+          ? "Auto-aprobar activado: el agente opera libremente"
+          : "Auto-aprobar desactivado: requiere aprobación manual"
+      );
+    } catch {
+      toast.error("Error al cambiar auto-aprobar");
+    } finally {
+      setTogglingAuto(false);
     }
   };
 
@@ -52,6 +75,20 @@ export default function OverviewPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant={autoApprove ? "default" : "outline"}
+              size="sm"
+              onClick={handleToggleAutoApprove}
+              disabled={togglingAuto}
+              className={autoApprove ? "bg-green-600 hover:bg-green-700" : ""}
+            >
+              {autoApprove ? (
+                <ShieldCheck className="w-4 h-4 mr-1" />
+              ) : (
+                <ShieldOff className="w-4 h-4 mr-1" />
+              )}
+              {autoApprove ? "Auto-Aprobar: ON" : "Auto-Aprobar: OFF"}
+            </Button>
             <Button variant="outline" size="sm" onClick={handleRefresh}>
               <RefreshCw className="w-4 h-4 mr-1" />
               Actualizar

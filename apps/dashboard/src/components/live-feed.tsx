@@ -14,6 +14,9 @@ import {
   Radio,
   CircleDot,
   Zap,
+  MessageSquare,
+  CheckCircle,
+  Clock,
 } from "lucide-react";
 
 function getStatusIcon(status: string) {
@@ -30,6 +33,12 @@ function getStatusIcon(status: string) {
       return <Zap className="w-3.5 h-3.5 text-orange-400" />;
     case "request_created":
       return <FileText className="w-3.5 h-3.5 text-green-400" />;
+    case "request_auto_approved":
+      return <CheckCircle className="w-3.5 h-3.5 text-green-400" />;
+    case "request_pending":
+      return <Clock className="w-3.5 h-3.5 text-yellow-400" />;
+    case "controller_message":
+      return <MessageSquare className="w-3.5 h-3.5 text-blue-400" />;
     case "idle":
       return <CircleDot className="w-3.5 h-3.5 text-gray-400" />;
     case "cycle_started":
@@ -54,7 +63,12 @@ function getStatusColor(status: string) {
     case "strategy_updated":
       return "border-l-orange-500";
     case "request_created":
+    case "request_auto_approved":
       return "border-l-green-500";
+    case "request_pending":
+      return "border-l-yellow-500";
+    case "controller_message":
+      return "border-l-blue-500";
     case "cycle_started":
       return "border-l-blue-500";
     case "cycle_complete":

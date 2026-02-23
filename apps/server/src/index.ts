@@ -9,7 +9,12 @@ import transactionRoutes from "./routes/transactions.js";
 import logRoutes from "./routes/logs.js";
 import statRoutes from "./routes/stats.js";
 import sseRoutes from "./routes/sse.js";
-import { startAgentEngine, runAllAgentCycles } from "./services/agent-engine.js";
+import {
+  startAgentEngine,
+  runAllAgentCycles,
+  setAutoApprove,
+  getAutoApproveStatus,
+} from "./services/agent-engine.js";
 
 const app = express();
 
@@ -36,7 +41,7 @@ app.use("/api/logs", logRoutes);
 app.use("/api/stats", statRoutes);
 app.use("/api", sseRoutes);
 
-// Manual trigger for agent cycle (useful for testing)
+// Manual trigger for agent cycle
 app.post("/api/engine/trigger", async (_req, res) => {
   try {
     await runAllAgentCycles();
@@ -46,6 +51,17 @@ app.post("/api/engine/trigger", async (_req, res) => {
       .status(500)
       .json({ error: error instanceof Error ? error.message : "Unknown error" });
   }
+});
+
+// Auto-approve toggle
+app.get("/api/engine/auto-approve", (_req, res) => {
+  res.json(getAutoApproveStatus());
+});
+
+app.post("/api/engine/auto-approve", (req, res) => {
+  const { enabled } = req.body;
+  setAutoApprove(!!enabled);
+  res.json(getAutoApproveStatus());
 });
 
 // Error handler

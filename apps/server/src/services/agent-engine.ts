@@ -6,9 +6,28 @@ import { buildAgentContext } from "./agent-context-builder.js";
 import { getAgentThought } from "./claude-client.js";
 import { deductApiCost } from "./wallet.js";
 import { reapDeadAgents } from "./reaper.js";
+import { processApprovedRequest } from "./request-processor.js";
 import { sseManager } from "../lib/sse-manager.js";
 import { env } from "../config/env.js";
 import type { RequestType, RequestPriority } from "@botsurviver/shared";
+
+// Auto-approve config: types that get auto-approved without human intervention
+let autoApproveEnabled = true;
+const AUTO_APPROVE_TYPES: RequestType[] = [
+  "strategy_change",
+  "communicate",
+  "custom",
+  "trade",
+];
+// Only "replicate" and "spend" require human approval by default
+
+export function setAutoApprove(enabled: boolean) {
+  autoApproveEnabled = enabled;
+}
+
+export function getAutoApproveStatus() {
+  return { enabled: autoApproveEnabled, autoApproveTypes: AUTO_APPROVE_TYPES };
+}
 
 const VALID_TYPES: RequestType[] = [
   "replicate",
@@ -115,7 +134,7 @@ async function runAgentCycle(
     });
   }
 
-  // 6. Create requests
+  // 6. Create requests (auto-approve if enabled)
   for (const req of response.requests) {
     const type = VALID_TYPES.includes(req.type as RequestType)
       ? (req.type as RequestType)
@@ -124,26 +143,66 @@ async function runAgentCycle(
       ? (req.priority as RequestPriority)
       : "medium";
 
-    await db.insert(requests).values({
-      agentId: agent.id,
-      type,
-      title: (req.title || "Solicitud sin título").slice(0, 200),
-      description: req.description || "Sin descripción",
-      payload: req.payload || {},
-      priority,
-    });
+    const shouldAutoApprove =
+      autoApproveEnabled && AUTO_APPROVE_TYPES.includes(type);
 
-    sseManager.broadcast({
-      type: "agent_activity",
-      data: {
+    const [createdReq] = await db
+      .insert(requests)
+      .values({
         agentId: agent.id,
-        name: agent.name,
-        status: "request_created",
-        message: `${agent.name} creó solicitud: "${(req.title || "").slice(0, 80)}"`,
-        requestType: type,
-        timestamp: new Date().toISOString(),
-      },
-    });
+        type,
+        title: (req.title || "Solicitud sin título").slice(0, 200),
+        description: req.description || "Sin descripción",
+        payload: req.payload || {},
+        priority,
+        status: shouldAutoApprove ? "approved" : "pending",
+        resolvedAt: shouldAutoApprove ? new Date() : null,
+        resolvedBy: shouldAutoApprove ? "auto-approve" : null,
+      })
+      .returning();
+
+    if (shouldAutoApprove) {
+      // Process the request immediately
+      try {
+        await processApprovedRequest({
+          id: createdReq.id,
+          agentId: agent.id,
+          type,
+          title: createdReq.title,
+          description: createdReq.description,
+          payload: (createdReq.payload as Record<string, unknown>) || {},
+        });
+      } catch (err) {
+        console.error(
+          `[ENGINE] Error processing auto-approved request:`,
+          err
+        );
+      }
+
+      sseManager.broadcast({
+        type: "agent_activity",
+        data: {
+          agentId: agent.id,
+          name: agent.name,
+          status: "request_auto_approved",
+          message: `${agent.name} - solicitud auto-aprobada: "${(req.title || "").slice(0, 80)}"`,
+          requestType: type,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } else {
+      sseManager.broadcast({
+        type: "agent_activity",
+        data: {
+          agentId: agent.id,
+          name: agent.name,
+          status: "request_pending",
+          message: `${agent.name} solicita aprobación: "${(req.title || "").slice(0, 80)}" (${type})`,
+          requestType: type,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
   }
 
   // 7. Update last_thought_at

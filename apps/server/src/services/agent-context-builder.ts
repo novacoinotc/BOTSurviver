@@ -14,7 +14,7 @@ export async function buildAgentContext(agentId: string): Promise<string> {
 
   if (!agent) throw new Error(`Agent ${agentId} not found`);
 
-  const [recentTx, recentLogs, pendingReqs, resolvedReqs, siblings, children, parent] =
+  const [recentTx, recentLogs, controllerMessages, pendingReqs, resolvedReqs, siblings, children, parent] =
     await Promise.all([
       db.query.transactions.findMany({
         where: eq(transactions.agentId, agentId),
@@ -28,6 +28,14 @@ export async function buildAgentContext(agentId: string): Promise<string> {
         ),
         orderBy: [desc(agentLogs.createdAt)],
         limit: 10,
+      }),
+      db.query.agentLogs.findMany({
+        where: and(
+          eq(agentLogs.agentId, agentId),
+          eq(agentLogs.level, "info")
+        ),
+        orderBy: [desc(agentLogs.createdAt)],
+        limit: 20,
       }),
       db.query.requests.findMany({
         where: and(
@@ -80,6 +88,15 @@ export async function buildAgentContext(agentId: string): Promise<string> {
 
   const thoughtHistory = recentLogs
     .map((l) => `[${new Date(l.createdAt!).toISOString()}] ${l.message}`)
+    .join("\n");
+
+  // Filter controller messages from info logs
+  const ctrlMsgs = controllerMessages
+    .filter((l) => l.message.startsWith("[MENSAJE DEL CONTROLADOR]"))
+    .map(
+      (l) =>
+        `[${new Date(l.createdAt!).toISOString()}] ${l.message.replace("[MENSAJE DEL CONTROLADOR] ", "")}`
+    )
     .join("\n");
 
   const pendingReqsList = pendingReqs
@@ -159,6 +176,10 @@ Hijos: ${childrenList}
 
 === HISTORIAL DE TRANSACCIONES RECIENTES ===
 ${txHistory || "Sin transacciones aún."}
+
+=== MENSAJES DEL CONTROLADOR ===
+${ctrlMsgs || "Sin mensajes del Controlador."}
+IMPORTANTE: Si el Controlador te ha enviado mensajes, léelos cuidadosamente y responde o actúa en consecuencia.
 
 === TUS PENSAMIENTOS RECIENTES ===
 ${thoughtHistory || "Sin pensamientos previos. Este es tu primer ciclo."}

@@ -70,12 +70,28 @@ export const api = {
     );
   },
 
+  // Controller messages
+  sendMessage: (agentId: string, message: string) =>
+    apiFetch<AgentLog>("/api/logs/message", {
+      method: "POST",
+      body: JSON.stringify({ agentId, message }),
+    }),
+
   // Stats
   getStats: () => apiFetch<DashboardStats>("/api/stats"),
 
   // Engine
   triggerCycle: () =>
     apiFetch<{ message: string }>("/api/engine/trigger", { method: "POST" }),
+  getAutoApprove: () =>
+    apiFetch<{ enabled: boolean; autoApproveTypes: string[] }>(
+      "/api/engine/auto-approve"
+    ),
+  setAutoApprove: (enabled: boolean) =>
+    apiFetch<{ enabled: boolean; autoApproveTypes: string[] }>(
+      "/api/engine/auto-approve",
+      { method: "POST", body: JSON.stringify({ enabled }) }
+    ),
 };
 
 // Types used by the API client
