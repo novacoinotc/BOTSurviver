@@ -24,25 +24,18 @@ export interface AgentThoughtResponse {
   toolsUsed: number;
 }
 
-// Tool definitions in OpenAI format for Groq
+// Tool definitions in OpenAI format for Groq - kept minimal to save tokens
 const VM_TOOLS: Groq.Chat.ChatCompletionTool[] = [
   {
     type: "function",
     function: {
       name: "execute_bash",
-      description:
-        "Ejecuta un comando bash en tu máquina virtual Linux (Ubuntu). Tienes internet completo, puedes instalar paquetes con apt/pip/npm, ejecutar scripts, hacer curl/wget, compilar código, etc. Tu directorio de trabajo es ~/workspace/",
+      description: "Ejecuta bash en tu VM Linux. Dir: ~/workspace/",
       parameters: {
         type: "object",
         properties: {
-          command: {
-            type: "string",
-            description: "El comando bash a ejecutar",
-          },
-          timeout: {
-            type: "number",
-            description: "Timeout en segundos (default 30, max 120)",
-          },
+          command: { type: "string", description: "Comando bash" },
+          timeout: { type: "number", description: "Timeout seg (max 120)" },
         },
         required: ["command"],
       },
@@ -52,20 +45,12 @@ const VM_TOOLS: Groq.Chat.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "write_file",
-      description:
-        "Escribe un archivo en tu workspace (~/workspace/). Puedes crear scripts, configs, código, etc.",
+      description: "Escribe archivo en ~/workspace/",
       parameters: {
         type: "object",
         properties: {
-          path: {
-            type: "string",
-            description:
-              "Ruta relativa al archivo (ej: 'bot.py', 'config/twitter.json')",
-          },
-          content: {
-            type: "string",
-            description: "Contenido completo del archivo",
-          },
+          path: { type: "string", description: "Ruta relativa" },
+          content: { type: "string", description: "Contenido" },
         },
         required: ["path", "content"],
       },
@@ -75,14 +60,11 @@ const VM_TOOLS: Groq.Chat.ChatCompletionTool[] = [
     type: "function",
     function: {
       name: "read_file",
-      description: "Lee un archivo de tu workspace",
+      description: "Lee archivo de ~/workspace/",
       parameters: {
         type: "object",
         properties: {
-          path: {
-            type: "string",
-            description: "Ruta relativa al archivo",
-          },
+          path: { type: "string", description: "Ruta relativa" },
         },
         required: ["path"],
       },
@@ -94,52 +76,23 @@ const FINAL_RESPONSE_TOOL: Groq.Chat.ChatCompletionTool = {
   type: "function",
   function: {
     name: "final_response",
-    description:
-      "Cuando termines todas tus acciones del ciclo, usa esta herramienta para dar tu respuesta final con tu pensamiento, actualización de estrategia y solicitudes.",
+    description: "Respuesta final del ciclo con pensamiento y solicitudes.",
     parameters: {
       type: "object",
       properties: {
-        thought: {
-          type: "string",
-          description:
-            "Tu monólogo interno sobre tu situación, lo que hiciste este ciclo, y tu análisis",
-        },
-        strategy_update: {
-          type: "string",
-          description:
-            "Tu estrategia actualizada (o null si no hay cambio)",
-        },
+        thought: { type: "string", description: "Tu análisis del ciclo" },
+        strategy_update: { type: "string", description: "Estrategia nueva o null" },
         requests: {
           type: "array",
-          description: "Solicitudes para el sistema (0-3)",
+          description: "Solicitudes (0-3)",
           items: {
             type: "object",
             properties: {
-              type: {
-                type: "string",
-                enum: [
-                  "trade",
-                  "replicate",
-                  "spend",
-                  "communicate",
-                  "strategy_change",
-                  "custom",
-                  "human_required",
-                ],
-              },
-              title: {
-                type: "string",
-                description: "Título corto (max 100 chars)",
-              },
-              description: {
-                type: "string",
-                description: "Descripción detallada",
-              },
-              payload: { type: "object", description: "Datos adicionales" },
-              priority: {
-                type: "string",
-                enum: ["low", "medium", "high", "critical"],
-              },
+              type: { type: "string", enum: ["trade", "replicate", "spend", "communicate", "strategy_change", "custom", "human_required"] },
+              title: { type: "string" },
+              description: { type: "string" },
+              payload: { type: "object" },
+              priority: { type: "string", enum: ["low", "medium", "high", "critical"] },
             },
             required: ["type", "title", "description", "priority"],
           },
@@ -184,8 +137,8 @@ export async function getAgentThought(
     {
       role: "user",
       content: vmAvailable
-        ? "Es tu ciclo de pensamiento. Analiza tu situación y actúa. Puedes usar tus herramientas (execute_bash, write_file, read_file) para ejecutar acciones en tu VM. Cuando termines, llama a final_response con tu pensamiento y solicitudes."
-        : "Es tu ciclo de pensamiento. Analiza tu situación y responde. Llama a final_response con tu pensamiento, actualización de estrategia y solicitudes.",
+        ? "Ciclo de pensamiento. Actúa con tus herramientas VM y llama final_response al terminar."
+        : "Ciclo de pensamiento. Llama final_response con tu análisis y solicitudes.",
     },
   ];
 
@@ -195,7 +148,7 @@ export async function getAgentThought(
   for (let turn = 0; turn < MAX_TOOL_TURNS; turn++) {
     const response = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
-      max_tokens: 4096,
+      max_tokens: 2048,
       temperature: 0.6,
       tools,
       tool_choice: "auto",
