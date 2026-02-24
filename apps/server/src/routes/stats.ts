@@ -17,11 +17,6 @@ router.get("/", async (_req, res) => {
     0
   );
 
-  const totalApiBudget = alive.reduce(
-    (sum, a) => sum + Number(a.apiBudget),
-    0
-  );
-
   const pendingRequests = await db.query.requests.findMany({
     where: eq(requests.status, "pending"),
     columns: { id: true },
@@ -39,8 +34,7 @@ router.get("/", async (_req, res) => {
     deadAgents: dead.length,
     pendingAgents: pending.length,
     totalCryptoBalance: totalCryptoBalance.toFixed(8),
-    totalApiBudget: totalApiBudget.toFixed(8),
-    totalEcosystemBalance: (totalCryptoBalance + totalApiBudget).toFixed(8),
+    totalEcosystemBalance: totalCryptoBalance.toFixed(8),
     pendingRequestsCount: pendingRequests.length,
     agentsByGeneration,
   });

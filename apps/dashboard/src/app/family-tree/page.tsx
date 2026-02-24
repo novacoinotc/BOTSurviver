@@ -3,13 +3,12 @@
 import { useAgents } from "@/hooks/use-agents";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Cpu, Wallet } from "lucide-react";
+import { Bot, Wallet } from "lucide-react";
 import Link from "next/link";
 import type { Agent } from "@/lib/api-client";
 
 function AgentNode({ agent, allAgents }: { agent: Agent; allAgents: Agent[] }) {
   const children = allAgents.filter((a) => a.parentId === agent.id);
-  const apiBudget = Number(agent.apiBudget);
   const cryptoBalance = Number(agent.cryptoBalance);
 
   return (
@@ -37,14 +36,11 @@ function AgentNode({ agent, allAgents }: { agent: Agent; allAgents: Agent[] }) {
                 {agent.status}
               </Badge>
             </div>
-            <div className="flex items-center justify-center gap-3 text-xs font-mono">
-              <span className="flex items-center gap-0.5 text-blue-400">
-                <Cpu className="w-3 h-3" />${apiBudget.toFixed(2)}
-              </span>
+            <div className="flex items-center justify-center gap-1 text-xs font-mono">
               <span className={`flex items-center gap-0.5 ${
                 cryptoBalance <= 0 ? "text-red-400" : cryptoBalance < 2 ? "text-yellow-400" : "text-green-400"
               }`}>
-                <Wallet className="w-3 h-3" />{cryptoBalance.toFixed(2)}
+                <Wallet className="w-3 h-3" />{cryptoBalance.toFixed(2)} USDT
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">

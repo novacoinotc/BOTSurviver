@@ -50,7 +50,6 @@ export default function AgentDetailPage({
     );
   }
 
-  const apiBudget = Number(agent.apiBudget);
   const cryptoBalance = Number(agent.cryptoBalance);
 
   const handleKill = async () => {
@@ -134,9 +133,6 @@ export default function AgentDetailPage({
               <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 {getTimeRemaining(agent.diesAt)}
-              </span>
-              <span className="flex items-center gap-1 font-mono text-blue-400">
-                API: ${apiBudget.toFixed(4)}
               </span>
               <span
                 className={`flex items-center gap-1 font-mono ${

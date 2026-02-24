@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Agent } from "@/lib/api-client";
-import { Bot, Clock, DollarSign, GitBranch, Cpu, Wallet } from "lucide-react";
+import { Bot, Clock, DollarSign, GitBranch, Wallet } from "lucide-react";
 
 function getTimeRemaining(diesAt: string): string {
   const diff = new Date(diesAt).getTime() - Date.now();
@@ -29,7 +29,6 @@ function getStatusColor(status: string) {
 }
 
 export function AgentCard({ agent }: { agent: Agent }) {
-  const apiBudget = Number(agent.apiBudget);
   const cryptoBalance = Number(agent.cryptoBalance);
   const timeLeft = getTimeRemaining(agent.diesAt);
 
@@ -59,29 +58,19 @@ export function AgentCard({ agent }: { agent: Agent }) {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="flex items-center gap-1">
-              <Cpu className="w-3 h-3 text-blue-400" />
-              <span className="text-muted-foreground">API:</span>
-              <span className="font-mono text-blue-400">
-                ${apiBudget.toFixed(2)}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Wallet className="w-3 h-3 text-yellow-400" />
-              <span className="text-muted-foreground">Crypto:</span>
-              <span
-                className={`font-mono ${
-                  cryptoBalance <= 0
-                    ? "text-red-400"
-                    : cryptoBalance < 2
-                      ? "text-yellow-400"
-                      : "text-green-400"
-                }`}
-              >
-                {cryptoBalance.toFixed(2)}
-              </span>
-            </div>
+          <div className="flex items-center gap-1.5 text-sm">
+            <Wallet className="w-3.5 h-3.5 text-green-400" />
+            <span
+              className={`font-mono font-medium ${
+                cryptoBalance <= 0
+                  ? "text-red-400"
+                  : cryptoBalance < 2
+                    ? "text-yellow-400"
+                    : "text-green-400"
+              }`}
+            >
+              {cryptoBalance.toFixed(2)} USDT
+            </span>
           </div>
 
           {agent.solanaAddress && (

@@ -4,7 +4,6 @@ import { db } from "../config/database.js";
 import { agents, requests, agentLogs } from "../db/schema.js";
 import { buildAgentContext } from "./agent-context-builder.js";
 import { getAgentThought } from "./claude-client.js";
-import { deductApiCost } from "./wallet.js";
 import { reapDeadAgents } from "./reaper.js";
 import { processApprovedRequest } from "./request-processor.js";
 import { sseManager } from "../lib/sse-manager.js";
@@ -123,13 +122,7 @@ async function runAgentCycle(
   });
   const response = await getAgentThought(context, agent.id, agent.name);
 
-  // 3. Deduct API cost
-  const newBalance = await deductApiCost(agent.id, response.apiCost);
-  console.log(
-    `[ENGINE] ${agent.name} API cost: $${response.apiCost.toFixed(6)}, new balance: ${newBalance}`
-  );
-
-  // 4. Log the thought
+  // 3. Log the thought
   await db.insert(agentLogs).values({
     agentId: agent.id,
     level: "thought",
@@ -149,7 +142,7 @@ async function runAgentCycle(
     },
   });
 
-  // 5. Update strategy if changed
+  // 4. Update strategy if changed
   if (response.strategy_update) {
     await db
       .update(agents)
@@ -168,7 +161,7 @@ async function runAgentCycle(
     });
   }
 
-  // 6. Create requests (auto-approve if enabled)
+  // 5. Create requests (auto-approve if enabled)
   for (const req of response.requests) {
     const type = VALID_TYPES.includes(req.type as RequestType)
       ? (req.type as RequestType)
@@ -239,13 +232,13 @@ async function runAgentCycle(
     }
   }
 
-  // 7. Update last_thought_at
+  // 6. Update last_thought_at
   await db
     .update(agents)
     .set({ lastThoughtAt: new Date() })
     .where(eq(agents.id, agent.id));
 
-  // 8. Emit SSE cycle complete
+  // 7. Emit SSE cycle complete
   sseManager.broadcast({
     type: "agent_activity",
     data: {
@@ -253,7 +246,6 @@ async function runAgentCycle(
       name: agent.name,
       status: "idle",
       message: `${agent.name} completó su ciclo. ${response.requests.length} solicitud(es) creada(s).`,
-      newBalance,
       requestCount: response.requests.length,
       timestamp: new Date().toISOString(),
     },

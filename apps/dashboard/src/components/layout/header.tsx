@@ -2,7 +2,7 @@
 
 import { useStats } from "@/hooks/use-agents";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Skull, Clock, Cpu, Wallet, Inbox } from "lucide-react";
+import { Bot, Skull, Clock, Wallet, Inbox } from "lucide-react";
 
 export function Header() {
   const { data: stats } = useStats();
@@ -23,14 +23,6 @@ export function Header() {
         <Badge variant="secondary" className="bg-red-500/20 text-red-400">
           {stats?.deadAgents ?? 0}
         </Badge>
-      </div>
-
-      <div className="flex items-center gap-2 text-sm">
-        <Cpu className="w-4 h-4 text-blue-400" />
-        <span className="text-muted-foreground">API:</span>
-        <span className="font-mono text-blue-400">
-          ${Number(stats?.totalApiBudget ?? 0).toFixed(2)}
-        </span>
       </div>
 
       <div className="flex items-center gap-2 text-sm">
