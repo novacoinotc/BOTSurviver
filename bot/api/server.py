@@ -12,9 +12,12 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Scalping Bot API", version="1.0.0")
 
+cors_origins = [o.strip() for o in settings.cors_origin.split(",") if o.strip()]
+cors_origins.extend(["http://localhost:3000", "http://localhost:3006"])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.cors_origin, "http://localhost:3000", "http://localhost:3006"],
+    allow_origins=cors_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
