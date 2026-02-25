@@ -54,6 +54,42 @@ def _atr(high: pd.Series, low: pd.Series, close: pd.Series, length: int = 14) ->
     return tr.ewm(alpha=1 / length, min_periods=length).mean()
 
 
+def _stoch_rsi(close: pd.Series, rsi_length: int = 14, stoch_length: int = 14, k: int = 3, d: int = 3):
+    """Stochastic RSI → (K line, D line). Key for scalping overbought/oversold."""
+    rsi = _rsi(close, rsi_length)
+    rsi_min = rsi.rolling(stoch_length).min()
+    rsi_max = rsi.rolling(stoch_length).max()
+    stoch_rsi = (rsi - rsi_min) / (rsi_max - rsi_min).replace(0, np.nan)
+    k_line = stoch_rsi.rolling(k).mean() * 100
+    d_line = k_line.rolling(d).mean()
+    return k_line, d_line
+
+
+def _adx(high: pd.Series, low: pd.Series, close: pd.Series, length: int = 14):
+    """ADX + DI+ / DI- → (ADX, +DI, -DI). Trend strength indicator."""
+    prev_high = high.shift(1)
+    prev_low = low.shift(1)
+    plus_dm = (high - prev_high).where((high - prev_high) > (prev_low - low), 0.0).clip(lower=0)
+    minus_dm = (prev_low - low).where((prev_low - low) > (high - prev_high), 0.0).clip(lower=0)
+    atr = _atr(high, low, close, length)
+    plus_di = 100 * (plus_dm.ewm(alpha=1 / length, min_periods=length).mean() / atr.replace(0, np.nan))
+    minus_di = 100 * (minus_dm.ewm(alpha=1 / length, min_periods=length).mean() / atr.replace(0, np.nan))
+    dx = (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan) * 100
+    adx = dx.ewm(alpha=1 / length, min_periods=length).mean()
+    return adx, plus_di, minus_di
+
+
+def _mfi(high: pd.Series, low: pd.Series, close: pd.Series, volume: pd.Series, length: int = 14) -> pd.Series:
+    """Money Flow Index - volume-weighted RSI. Detects divergences."""
+    typical = (high + low + close) / 3
+    raw_money_flow = typical * volume
+    delta = typical.diff()
+    pos_flow = raw_money_flow.where(delta > 0, 0.0).rolling(length).sum()
+    neg_flow = raw_money_flow.where(delta <= 0, 0.0).rolling(length).sum()
+    mfi = 100 - (100 / (1 + pos_flow / neg_flow.replace(0, np.nan)))
+    return mfi
+
+
 def calculate_all(df: pd.DataFrame) -> dict:
     """Calculate all indicators from OHLCV DataFrame. Returns a flat dict."""
     if df.empty or len(df) < 21:
@@ -128,6 +164,35 @@ def calculate_all(df: pd.DataFrame) -> dict:
             total_vol = last_5["quote_volume"].sum()
             sell_vol = total_vol - buy_vol
             result["volume_delta_5m"] = round(buy_vol - sell_vol, 2)
+
+        # Stochastic RSI (scalping overbought/oversold)
+        stoch_k, stoch_d = _stoch_rsi(close, 14, 14, 3, 3)
+        result["stoch_rsi_k"] = _last(stoch_k)
+        result["stoch_rsi_d"] = _last(stoch_d)
+
+        # ADX + DI (trend strength)
+        adx, plus_di, minus_di = _adx(df["high"], df["low"], close, 14)
+        result["adx"] = _last(adx)
+        result["plus_di"] = _last(plus_di)
+        result["minus_di"] = _last(minus_di)
+
+        # MFI (volume-weighted momentum)
+        if "volume" in df.columns:
+            mfi = _mfi(df["high"], df["low"], close, df["volume"], 14)
+            result["mfi"] = _last(mfi)
+
+        # BB Squeeze (volatility compression = breakout imminent)
+        atr_val = result.get("atr_14")
+        bb_upper_val = result.get("bb_upper")
+        bb_lower_val = result.get("bb_lower")
+        if atr_val and bb_upper_val and bb_lower_val and price > 0:
+            bb_width = (bb_upper_val - bb_lower_val) / price
+            result["bb_width"] = round(bb_width, 6)
+            result["bb_squeeze"] = bb_width < 0.02  # tight bands = squeeze
+
+        # Normalized ATR (% of price, for cross-pair comparison)
+        if atr_val and price > 0:
+            result["atr_pct"] = round(atr_val / price * 100, 4)
 
     except Exception as e:
         logger.error(f"Error calculating indicators: {e}")

@@ -113,6 +113,9 @@ class PositionManager:
         api_costs = await self.db.get_api_costs(since=start)
         total_api_cost = sum(c["cost_usd"] for c in api_costs)
 
+        # Add VPS cost prorated daily ($6/month ÷ 30 = $0.20/day)
+        vps_daily_cost = 6.0 / 30.0
+
         starting = self._today_start_balance or self.trader.initial_balance
 
         stats = {
@@ -120,7 +123,7 @@ class PositionManager:
             "starting_balance": round(starting, 2),
             "ending_balance": round(self.trader.total_equity, 2),
             "pnl_gross": round(pnl_gross, 4),
-            "pnl_net": round(pnl_net - total_api_cost, 4),
+            "pnl_net": round(pnl_net - total_api_cost - vps_daily_cost, 4),
             "total_trades": len(today_trades),
             "winning_trades": len(winning),
             "losing_trades": len(losing),

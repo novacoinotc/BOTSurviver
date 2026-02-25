@@ -15,6 +15,10 @@ CRYPTOPANIC_URL = "https://cryptopanic.com/api/v1/posts/"
 FEAR_GREED_URL = "https://api.alternative.me/fng/"
 
 
+CRYPTOPANIC_MONTHLY_LIMIT = 3000
+CRYPTOPANIC_DAILY_SAFE_LIMIT = 90  # 3000/month ÷ 33 days buffer
+
+
 class SentimentAnalyzer:
     """Fetches and scores news sentiment from CryptoPanic + Fear & Greed Index."""
 
@@ -25,13 +29,37 @@ class SentimentAnalyzer:
         self._fear_greed: Optional[int] = None
         self._last_fetch: Optional[datetime] = None
         self._breaking_news: list[dict] = []
+        self._monthly_calls: int = 0
+        self._monthly_calls_checked: Optional[datetime] = None
+
+    async def _check_monthly_limit(self) -> bool:
+        """Check if CryptoPanic monthly limit is approaching. Returns True if safe."""
+        now = datetime.utcnow()
+        # Refresh count every hour
+        if self._monthly_calls_checked and (now - self._monthly_calls_checked).total_seconds() < 3600:
+            return self._monthly_calls < CRYPTOPANIC_MONTHLY_LIMIT - 50
+
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+        costs = await self.db.get_api_costs(service="cryptopanic", since=month_start)
+        self._monthly_calls = len(costs)
+        self._monthly_calls_checked = now
+
+        if self._monthly_calls >= CRYPTOPANIC_MONTHLY_LIMIT - 50:
+            logger.warning(f"CryptoPanic near monthly limit: {self._monthly_calls}/{CRYPTOPANIC_MONTHLY_LIMIT}")
+            return False
+        return True
 
     async def fetch_news(self) -> dict:
         """Fetch latest important crypto news from CryptoPanic.
-        Budget: ~100 calls/day (3000/month).
+        Budget: ~100 calls/day (3000/month). Hard-enforced.
         """
         if not settings.cryptopanic_api_key:
             return {"score": 50, "recent_news": "No API key configured"}
+
+        # Check monthly limit before calling
+        if not await self._check_monthly_limit():
+            logger.warning("CryptoPanic monthly limit reached, skipping fetch")
+            return {"score": self._sentiment_score, "recent_news": "Monthly limit reached"}
 
         try:
             async with httpx.AsyncClient(timeout=10) as client:

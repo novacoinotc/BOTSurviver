@@ -54,9 +54,19 @@ class MarketSnapshot(BaseModel):
     vwap: Optional[float] = None
     price_vs_vwap: Optional[str] = None
     atr_14: Optional[float] = None
+    atr_pct: Optional[float] = None  # ATR as % of price
     volume_delta_5m: Optional[float] = None
     book_imbalance: Optional[float] = None
     funding_rate: Optional[float] = None
+    # New scalping indicators
+    stoch_rsi_k: Optional[float] = None
+    stoch_rsi_d: Optional[float] = None
+    adx: Optional[float] = None  # trend strength (>25 = trending)
+    plus_di: Optional[float] = None
+    minus_di: Optional[float] = None
+    mfi: Optional[float] = None  # money flow index (volume-weighted RSI)
+    bb_width: Optional[float] = None
+    bb_squeeze: Optional[bool] = None  # tight bands = breakout imminent
     sentiment: Optional[dict] = None
     fear_greed: Optional[int] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)

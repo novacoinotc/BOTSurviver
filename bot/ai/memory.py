@@ -51,7 +51,7 @@ class MemorySystem:
         market_regime: str = "unknown",
         limit: int = 5,
     ) -> list[dict]:
-        """Find similar past trades for context in Claude's prompt."""
+        """Find similar past trades with win-rate statistics for Claude's prompt."""
         memories = await self.db.find_similar_trades(pair, market_regime, limit)
         for m in memories:
             if isinstance(m.get("indicators_at_entry"), str):
@@ -65,6 +65,46 @@ class MemorySystem:
                 except json.JSONDecodeError:
                     m["tags"] = []
         return memories
+
+    async def get_pattern_stats(self, pair: str, direction: str, market_regime: str) -> dict:
+        """Get win-rate statistics for a specific pattern (pair + direction + regime).
+        Returns stats like: 'BTCUSDT LONG in trending_up: 7/10 trades won (70%)'
+        """
+        all_memories = await self.db.get_recent_memories(limit=500)
+        matching = [
+            m for m in all_memories
+            if (m.get("pair") == pair or pair == "")
+            and (m.get("direction") == direction or direction == "")
+            and (m.get("market_regime") == market_regime or market_regime == "")
+        ]
+        total = len(matching)
+        if total == 0:
+            return {"total": 0, "wins": 0, "win_rate": 0, "avg_pnl_pct": 0, "summary": "No historical data"}
+
+        wins = sum(1 for m in matching if m.get("pnl", 0) > 0)
+        avg_pnl = sum(m.get("pnl_pct", 0) for m in matching) / total
+        avg_hold = sum(m.get("hold_time_minutes", 0) for m in matching) / total
+        best = max(m.get("pnl_pct", 0) for m in matching)
+        worst = min(m.get("pnl_pct", 0) for m in matching)
+
+        summary = (
+            f"{pair or 'ALL'} {direction or 'ALL'} in {market_regime or 'ALL'}: "
+            f"{wins}/{total} won ({wins/total*100:.0f}%), "
+            f"avg PnL {avg_pnl:.2f}%, best {best:.2f}%, worst {worst:.2f}%, "
+            f"avg hold {avg_hold:.0f}min"
+        )
+
+        return {
+            "total": total,
+            "wins": wins,
+            "losses": total - wins,
+            "win_rate": round(wins / total * 100, 1),
+            "avg_pnl_pct": round(avg_pnl, 4),
+            "avg_hold_minutes": round(avg_hold, 1),
+            "best_pnl_pct": round(best, 4),
+            "worst_pnl_pct": round(worst, 4),
+            "summary": summary,
+        }
 
     async def update_lessons(self, trade_reviews: list[dict]):
         """Update lessons learned from Claude's deep analysis."""

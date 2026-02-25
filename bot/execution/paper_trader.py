@@ -180,6 +180,21 @@ class PaperTrader:
         else:
             position.unrealized_pnl = (position.entry_price - current_price) * position.quantity
 
+    def apply_funding_rate(self, pair: str, funding_rate: float):
+        """Apply funding rate cost/credit to an open position (every 8h on Binance Futures).
+        Positive rate: longs pay shorts. Negative rate: shorts pay longs."""
+        position = self.positions.get(pair)
+        if not position:
+            return
+        notional = position.quantity * position.current_price
+        # Longs pay when rate is positive, shorts pay when rate is negative
+        if position.direction == Direction.LONG:
+            cost = notional * funding_rate  # positive = cost, negative = credit
+        else:
+            cost = -notional * funding_rate  # inverted for shorts
+        self.balance -= cost
+        logger.info(f"Funding rate {pair}: {funding_rate:.6f}, cost=${cost:.4f} ({position.direction.value})")
+
     def check_stop_loss_take_profit(self, pair: str, current_price: float) -> Optional[str]:
         """Check if SL/TP has been hit. Returns 'sl' or 'tp' or None."""
         position = self.positions.get(pair)

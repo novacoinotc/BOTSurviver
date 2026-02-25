@@ -226,6 +226,11 @@ class TradingEngine:
         # Check circuit breaker
         cb_active, cb_reason = self.circuit_breaker.check(self.paper_trader.total_equity)
 
+        # Get win-rate statistics for this pair + regime
+        pattern_stats = await self.memory.get_pattern_stats(
+            pair=pair, direction="", market_regime=regime
+        )
+
         # Ask Claude for decision
         decision = await self.claude_trader.make_decision(
             snapshot=snapshot,
@@ -234,6 +239,7 @@ class TradingEngine:
             active_rules=active_rules,
             current_params=params,
             balance=self.paper_trader.balance,
+            pattern_stats=pattern_stats,
         )
 
         # Validate with risk manager
