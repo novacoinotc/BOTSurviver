@@ -35,17 +35,13 @@ class PaperTrader:
         margin = self.balance * pos_pct
         notional = margin * leverage
 
-        # Apply slippage
-        slippage = settings.slippage_major if pair in MAJOR_PAIRS else settings.slippage_alt
-        if decision.direction == Direction.LONG:
-            entry_price = current_price * (1 + slippage)
-        else:
-            entry_price = current_price * (1 - slippage)
+        # MAKER fee on entry (limit order — no slippage for maker execution)
+        entry_price = current_price  # limit order fills at exact price
 
         quantity = notional / entry_price
 
-        # Taker fee on entry (market order)
-        entry_fee = notional * settings.taker_fee
+        # Maker fee on entry (limit order)
+        entry_fee = notional * settings.maker_fee
 
         # Deduct margin + fee from balance
         total_cost = margin + entry_fee
@@ -109,21 +105,34 @@ class PaperTrader:
         return position
 
     async def close_position(self, pair: str, current_price: float, reason: str = "") -> Optional[Trade]:
-        """Close an existing position."""
+        """Close an existing position.
+
+        Fee logic (matches backtest):
+        - Take Profit: MAKER fee (limit order, no slippage)
+        - Stop Loss / Trailing / Other: TAKER fee + slippage (market order)
+        """
         position = self.positions.get(pair)
         if not position:
             logger.warning(f"No position to close for {pair}")
             return None
 
-        # Apply slippage on exit
-        slippage = settings.slippage_major if pair in MAJOR_PAIRS else settings.slippage_alt
-        if position.direction == Direction.LONG:
-            exit_price = current_price * (1 - slippage)
-        else:
-            exit_price = current_price * (1 + slippage)
+        # TP exits use maker fee (limit order, no slippage)
+        # SL/trailing/other exits use taker fee + slippage (market order)
+        is_tp_exit = "take profit" in reason.lower() or "tp" in reason.lower()
 
-        notional = position.quantity * exit_price
-        exit_fee = notional * settings.taker_fee
+        if is_tp_exit:
+            exit_price = current_price  # limit order fills at exact price
+            notional = position.quantity * exit_price
+            exit_fee = notional * settings.maker_fee
+        else:
+            # Apply slippage for market exits (SL, trailing, stale, liquidation)
+            slippage = settings.slippage_major if pair in MAJOR_PAIRS else settings.slippage_alt
+            if position.direction == Direction.LONG:
+                exit_price = current_price * (1 - slippage)
+            else:
+                exit_price = current_price * (1 + slippage)
+            notional = position.quantity * exit_price
+            exit_fee = notional * settings.taker_fee
 
         # Calculate PnL
         if position.direction == Direction.LONG:
@@ -249,22 +258,36 @@ class PaperTrader:
 
     def update_trailing_stops(self, pair: str):
         """Update trailing stop based on price movement.
-        IMPORTANT: Only activates after position is in profit to avoid
-        immediately tightening Claude's carefully calculated SL."""
+
+        Matches backtest simulator logic exactly:
+        - LONG: new_sl = highest_price * (1 - trailing_pct), apply if new_sl > current SL
+        - SHORT: new_sl = lowest_price * (1 + trailing_pct), apply if new_sl < current SL
+        No entry_price guard — trail activates as soon as math allows it.
+        """
         position = self.positions.get(pair)
-        if not position or not position.trailing_stop_distance:
+        if not position:
             return
 
-        if position.direction == Direction.LONG:
-            new_sl = position.highest_price - position.trailing_stop_distance
-            # Only trail once in profit: new SL must be above entry price
-            if new_sl > position.entry_price and new_sl > position.stop_loss:
-                position.stop_loss = new_sl
-        else:
-            new_sl = position.lowest_price + position.trailing_stop_distance
-            # Only trail once in profit: new SL must be below entry price
-            if new_sl < position.entry_price and 0 < new_sl < position.stop_loss:
-                position.stop_loss = new_sl
+        # Prefer percentage-based trailing (matches backtest)
+        if position.trailing_stop_pct and position.trailing_stop_pct > 0:
+            if position.direction == Direction.LONG:
+                new_sl = position.highest_price * (1 - position.trailing_stop_pct)
+                if new_sl > position.stop_loss:
+                    position.stop_loss = new_sl
+            else:
+                new_sl = position.lowest_price * (1 + position.trailing_stop_pct)
+                if 0 < new_sl < position.stop_loss:
+                    position.stop_loss = new_sl
+        elif position.trailing_stop_distance and position.trailing_stop_distance > 0:
+            # Legacy: fixed distance trailing
+            if position.direction == Direction.LONG:
+                new_sl = position.highest_price - position.trailing_stop_distance
+                if new_sl > position.stop_loss:
+                    position.stop_loss = new_sl
+            else:
+                new_sl = position.lowest_price + position.trailing_stop_distance
+                if 0 < new_sl < position.stop_loss:
+                    position.stop_loss = new_sl
 
     def set_trailing_stop(self, pair: str, distance: float):
         """Enable trailing stop for a position with given ATR-based distance."""
@@ -272,6 +295,13 @@ class PaperTrader:
         if position:
             position.trailing_stop_distance = distance
             logger.info(f"Trailing stop set for {pair}: distance={distance:.4f}")
+
+    def set_trailing_stop_pct(self, pair: str, pct: float):
+        """Enable percentage-based trailing stop (matches backtest simulator)."""
+        position = self.positions.get(pair)
+        if position:
+            position.trailing_stop_pct = pct
+            logger.info(f"Trailing stop set for {pair}: pct={pct*100:.1f}%")
 
     @property
     def total_equity(self) -> float:

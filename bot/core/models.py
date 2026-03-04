@@ -132,7 +132,8 @@ class Position(BaseModel):
     entry_reasoning: str = ""
     entry_indicators: Optional[dict] = None
     # Trailing stop
-    trailing_stop_distance: Optional[float] = None  # ATR-based distance
+    trailing_stop_distance: Optional[float] = None  # ATR-based distance (legacy)
+    trailing_stop_pct: Optional[float] = None  # percentage-based trailing (matches backtest)
     highest_price: float = 0.0  # track peak for trailing SL on longs
     lowest_price: float = 999999.0  # track trough for trailing SL on shorts
     # Liquidation

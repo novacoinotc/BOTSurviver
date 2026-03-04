@@ -17,6 +17,7 @@ from data.futures_data import FuturesDataFetcher
 from data.history_loader import load_historical_candles
 from db.database import Database
 from strategy.market_analyzer import MarketAnalyzer
+from strategy.signal_detector import SignalDetector
 from ai.claude_trader import ClaudeTrader
 from ai.memory import MemorySystem
 from ai.optimizer import Optimizer
@@ -45,6 +46,7 @@ class TradingEngine:
 
         # Strategy
         self.market_analyzer = MarketAnalyzer(self.candle_store, self.orderbook_store)
+        self.signal_detector = SignalDetector()
 
         # AI
         self.claude_trader = ClaudeTrader(self.db)
@@ -69,19 +71,22 @@ class TradingEngine:
         self._last_optimization: Optional[datetime] = None
         self._current_regime = MarketRegime.UNKNOWN
         self._pair_cooldown: dict[str, datetime] = {}  # pair -> last close time
+        self._rejection_cooldown: dict[str, datetime] = {}  # pair -> last rejection time
         self._market_context: dict = {}  # cached market summary for prompt
+        self._cached_signals: dict = {}  # pair -> Signal (avoid double-detect)
 
     async def start(self):
         """Initialize all components and start the trading loop."""
         logger.info("=" * 60)
-        logger.info("TRADING ENGINE STARTING - SKYNET MODE")
+        logger.info("TRADING ENGINE STARTING - 1H STRATEGY MODE")
+        logger.info("Strategy=volume_spike SL=3% TP=4% Trail=6% CD=48h Lev=10x Pos=2%")
         logger.info("=" * 60)
 
         # Connect DB
         await self.db.connect()
 
         # Get top pairs
-        self.pairs = await get_top_pairs(count=20)
+        self.pairs = await get_top_pairs(count=19)
         logger.info(f"Trading pairs: {self.pairs}")
 
         # Initialize optimizer params
@@ -101,16 +106,17 @@ class TradingEngine:
         self.market_analyzer.set_sentiment(self.sentiment.current_sentiment)
         self.market_analyzer.set_fear_greed(self.sentiment.fear_greed or 50)
 
-        # Load historical candles via proxy (eliminates 14-min warmup)
+        # Load historical candles via proxy (1m, 5m, 1h)
         try:
             loaded = await load_historical_candles(
                 self.candle_store, self.pairs,
-                timeframes=["1m", "5m"], limit=499,
+                timeframes=["1m", "5m", "1h"], limit=499,
             )
             if loaded > 0:
-                logger.info(f"Historical candles loaded: {loaded} total, ready to analyze immediately")
+                pairs_1h = len(self.candle_store.pairs_with_1h_data)
+                logger.info(f"Historical candles loaded: {loaded} total, {pairs_1h} pairs with 1H data")
             else:
-                logger.info("No historical candles loaded, will accumulate from WebSocket (~14 min)")
+                logger.info("No historical candles loaded, will accumulate from WebSocket")
         except Exception as e:
             logger.warning(f"Historical candle loading failed: {e}")
 
@@ -265,8 +271,8 @@ class TradingEngine:
     # --- Main Analysis Loop ---
 
     async def _analysis_loop(self):
-        """Main loop: analyze each pair every ~30 seconds."""
-        await asyncio.sleep(30)  # wait for data
+        """Main loop: analyze 1H signals every 60 seconds."""
+        await asyncio.sleep(30)  # wait for initial data
 
         while self._running:
             try:
@@ -280,55 +286,73 @@ class TradingEngine:
                 if self.sentiment.fear_greed:
                     self.risk_manager.update_fear_greed(self.sentiment.fear_greed)
 
-                # Fast regime detection every cycle
+                # Fast regime detection every cycle (now from 1H data)
                 self._current_regime = self.market_analyzer.get_market_regime_consensus(self.pairs)
 
-                # Cache market summary for Claude's prompt (once per cycle, not per pair)
+                # Cache market summary
                 self._market_context = self.market_analyzer.get_market_summary(self.pairs)
 
-                active_pairs = self.candle_store.pairs_with_data
-                if not active_pairs:
-                    counts = self.candle_store.get_candle_counts()
-                    max_count = max(counts.values()) if counts else 0
-                    total_pairs_receiving = len(counts)
-                    logger.info(
-                        f"Accumulating data: {total_pairs_receiving} pairs receiving, "
-                        f"max {max_count}/14 candles (need ~{max(0, 14-max_count)} more minutes)"
-                    )
+                # Use 1H data availability for signal detection
+                active_pairs_1h = self.candle_store.pairs_with_1h_data
+                # Also track pairs with any data (for position management)
+                active_pairs_any = self.candle_store.pairs_with_data
+
+                if not active_pairs_1h and not active_pairs_any:
+                    logger.info("Waiting for 1H candle data (need 50+ candles)...")
                     await asyncio.sleep(10)
                     continue
 
-                # Prioritize pairs with open positions
-                position_pairs = [p for p in active_pairs if p in self.paper_trader.positions]
-                other_pairs = [p for p in active_pairs if p not in self.paper_trader.positions]
-                ordered_pairs = position_pairs + other_pairs
+                # Pairs with open positions: ALWAYS check (manage/track)
+                position_pairs = [p for p in active_pairs_any if p in self.paper_trader.positions]
 
-                # Score all pairs and sort by signal strength
-                scored_pairs = []
-                for pair in ordered_pairs:
+                # For signal detection: only pairs with 1H data
+                candidate_pairs = []
+                skipped = 0
+                for pair in active_pairs_1h:
+                    if pair in self.paper_trader.positions:
+                        continue
+                    # Skip pairs in rejection cooldown (prevents log spam)
+                    if pair in self._rejection_cooldown:
+                        rc_elapsed = (datetime.utcnow() - self._rejection_cooldown[pair]).total_seconds()
+                        if rc_elapsed < 1800:
+                            skipped += 1
+                            continue
                     snapshot = self.market_analyzer.get_snapshot(pair)
                     if snapshot:
-                        scored_pairs.append((pair, self._signal_score(snapshot)))
+                        score = self._signal_score(snapshot)
+                        if score >= 5:  # 1H strategy threshold
+                            candidate_pairs.append((pair, score))
+                        else:
+                            skipped += 1
 
-                # Sort by score descending, always analyze at least top 5
-                scored_pairs.sort(key=lambda x: x[1], reverse=True)
-                min_analyze = min(5, len(scored_pairs))
+                # Sort candidates by score, take top 3 max
+                candidate_pairs.sort(key=lambda x: x[1], reverse=True)
+                top_candidates = candidate_pairs[:3]
 
+                # Analyze: all position pairs + top 3 candidates
                 analyzed = 0
-                for pair, score in scored_pairs:
+                for pair in position_pairs:
                     if not self._running:
                         break
-                    # Analyze if: has open position, score >= 2, or in top 5
-                    if pair not in self.paper_trader.positions and score < 2 and analyzed >= min_analyze:
-                        continue
+                    await self._analyze_pair(pair, params)
+                    analyzed += 1
+                    await asyncio.sleep(0.3)
 
+                for pair, score in top_candidates:
+                    if not self._running:
+                        break
                     await self._analyze_pair(pair, params)
                     analyzed += 1
                     await asyncio.sleep(0.3)
 
                 if self._analysis_count % 5 == 0:
-                    top_scores = [(p, s) for p, s in scored_pairs[:5]]
-                    logger.info(f"Cycle {self._analysis_count}: analyzed {analyzed}/{len(scored_pairs)}, top: {top_scores}")
+                    cand_info = [(p, s) for p, s in top_candidates]
+                    logger.info(
+                        f"Cycle {self._analysis_count}: analyzed {analyzed} "
+                        f"({len(position_pairs)} positions + {len(top_candidates)} candidates), "
+                        f"skipped {skipped}, 1H pairs ready: {len(active_pairs_1h)}, "
+                        f"candidates: {cand_info}"
+                    )
 
                 self._analysis_count += 1
                 await asyncio.sleep(settings.analysis_interval_seconds)
@@ -338,87 +362,74 @@ class TradingEngine:
                 await asyncio.sleep(5)
 
     def _signal_score(self, snapshot: MarketSnapshot) -> int:
-        """Score a pair's signal strength (0-15+). Higher = more interesting for Claude."""
-        adx = snapshot.adx or 0
-        rsi_7 = snapshot.rsi_7 or 50
-        bb_squeeze = snapshot.bb_squeeze or False
-        bb_pct = snapshot.bb_pct or 0.5
-        macd_hist = snapshot.macd_hist or 0
-        ema_alignment = snapshot.ema_alignment or 0
-        rsi_divergence = snapshot.rsi_divergence or "none"
-        consecutive = snapshot.consecutive_direction or 0
-        volume_buy_ratio = snapshot.volume_buy_ratio or 0.5
-        stoch_k = snapshot.stoch_rsi_k or 50
-
-        score = 0
-
-        if adx > 25: score += 2
-        elif adx > 18: score += 1
-
-        if rsi_7 < 25 or rsi_7 > 75: score += 2
-        elif rsi_7 < 35 or rsi_7 > 65: score += 1
-
-        if bb_squeeze: score += 2
-
-        if bb_pct < 0.05 or bb_pct > 0.95: score += 2
-        elif bb_pct < 0.15 or bb_pct > 0.85: score += 1
-
-        if abs(macd_hist) > 0: score += 1
-        if abs(ema_alignment) > 0.5: score += 1
-        if rsi_divergence != "none": score += 2
-        if abs(consecutive) >= 3: score += 2
-        if volume_buy_ratio < 0.3 or volume_buy_ratio > 0.7: score += 1
-        if stoch_k < 10 or stoch_k > 90: score += 1
-
-        return score
+        """Score a pair's signal strength and cache the signal for _analyze_pair.
+        Avoids double-detect and duplicate log lines."""
+        signal = self.signal_detector.detect(snapshot)
+        if signal:
+            self._cached_signals[snapshot.pair] = signal
+            return int(signal.score)
+        self._cached_signals.pop(snapshot.pair, None)
+        return 0
 
     async def _analyze_pair(self, pair: str, params: dict):
-        """Analyze a single pair and execute Claude's decision."""
-        # Get market snapshot
+        """Analyze a single pair. 1H strategy — deterministic, zero Claude API calls."""
         snapshot = self.market_analyzer.get_snapshot(pair)
         if not snapshot:
             return
 
         has_position = pair in self.paper_trader.positions
-
-        # Per-pair cooldown: don't enter a pair that was just closed
-        if not has_position and pair in self._pair_cooldown:
-            elapsed = (datetime.utcnow() - self._pair_cooldown[pair]).total_seconds()
-            if elapsed < 180:  # 3-minute cooldown between trades on same pair
-                return
-
-        # Min hold time: don't ask Claude about young positions (let SL/TP work)
-        if has_position:
-            position = self.paper_trader.positions[pair]
-            hold_minutes = (datetime.utcnow() - position.opened_at).total_seconds() / 60
-            if hold_minutes < 3.0:
-                return  # Let the trade breathe — SL/TP protect it
-
-        # Get context for Claude
         regime = self._current_regime.value
-        similar_trades = await self.memory.find_similar(pair, regime)
-        active_rules = await self.memory.get_active_rules()
-        open_positions = self.position_manager.get_open_positions()
 
         # Check circuit breaker
         cb_active, cb_reason = self.circuit_breaker.check(self.paper_trader.total_equity)
 
-        # Get win-rate statistics
-        pattern_stats = await self.memory.get_pattern_stats(
-            pair=pair, direction="", market_regime=regime
-        )
+        # === PATH A: Manage existing position ===
+        # Let SL / TP / trailing stop (6%) handle all exits.
+        # Only intervene for extremely stale losing trades (>7 days and deep red).
+        if has_position:
+            position = self.paper_trader.positions[pair]
+            hold_hours = (datetime.utcnow() - position.opened_at).total_seconds() / 3600
 
-        # Ask Claude for decision
-        decision = await self.claude_trader.make_decision(
+            # 1H strategy: trades can run for days. Only exit stale losers after 7 days.
+            if hold_hours > 168:  # 7 days
+                pnl_pct = position.unrealized_pnl / max(position.margin_used, 1) * 100
+                if pnl_pct < -2.0:  # Deep red after a week
+                    price = self.candle_store.get_latest_price(pair) or snapshot.price
+                    reason = f"Stale trade exit: {hold_hours:.0f}h, PnL={pnl_pct:+.1f}%"
+                    trade = await self.paper_trader.close_position(pair, price, reason)
+                    if trade:
+                        self._pair_cooldown[pair] = datetime.utcnow()
+                        indicators = snapshot.model_dump(exclude_none=True, exclude={"timestamp"})
+                        await self.memory.record_trade(trade, indicators, self._current_regime)
+                        logger.info(f"[{pair}] {reason}")
+
+            return
+
+        # === PATH B: Look for new entry (1H signal + deterministic calibration) ===
+
+        # Cooldown: 48 hours between trades on same pair (backtest-optimized)
+        if pair in self._pair_cooldown:
+            elapsed = (datetime.utcnow() - self._pair_cooldown[pair]).total_seconds()
+            if elapsed < 48 * 3600:  # 48 hours = 172800 seconds
+                return
+
+        # Rejection cooldown: 30 min after risk rejection (prevents log spam)
+        if pair in self._rejection_cooldown:
+            elapsed = (datetime.utcnow() - self._rejection_cooldown[pair]).total_seconds()
+            if elapsed < 1800:  # 30 minutes
+                return
+
+        # Use cached signal from _signal_score pre-filter (avoids double-detect)
+        signal = self._cached_signals.pop(pair, None)
+        if not signal:
+            return
+
+        # Deterministic calibration — zero API calls
+        decision = self.signal_detector.calibrate(
+            signal=signal,
             snapshot=snapshot,
-            open_positions=open_positions,
-            similar_trades=similar_trades,
-            active_rules=active_rules,
-            current_params=params,
             balance=self.paper_trader.balance,
-            pattern_stats=pattern_stats,
-            market_regime=self._current_regime.value,
-            market_context=self._market_context,
+            regime=regime,
         )
 
         # Validate with risk manager
@@ -429,23 +440,22 @@ class TradingEngine:
             has_position_for_pair=has_position,
             circuit_breaker_active=cb_active,
             margin_ratio=self.paper_trader.margin_ratio,
+            current_positions=self.position_manager.get_open_positions(),
         )
 
         if not is_valid:
-            if decision.action != ActionType.HOLD:
-                logger.info(f"[{pair}] Decision rejected: {rejection}")
+            logger.info(f"[{pair}] Rejected: {rejection}")
+            self._rejection_cooldown[pair] = datetime.utcnow()
             return
 
-        # Execute decision
+        # Execute entry with MAKER fee (limit order simulation)
         price = self.candle_store.get_latest_price(pair) or snapshot.price
 
         if decision.action in (ActionType.ENTER_LONG, ActionType.ENTER_SHORT):
             position = await self.paper_trader.open_position(decision, price)
             if position:
-                # Enable trailing stop based on ATR (wider to let trades breathe)
-                atr = snapshot.atr_14
-                if atr:
-                    self.paper_trader.set_trailing_stop(pair, atr * 2.5)
+                # Trailing stop = 6% (percentage-based, matches backtest simulator)
+                self.paper_trader.set_trailing_stop_pct(pair, 0.06)
 
                 # Store indicators with the trade
                 indicators = snapshot.model_dump(exclude_none=True, exclude={"timestamp"})
@@ -454,22 +464,6 @@ class TradingEngine:
                     "market_regime": regime,
                     "sentiment_score": snapshot.fear_greed,
                 })
-
-        elif decision.action == ActionType.EXIT:
-            trade = await self.paper_trader.close_position(pair, price, decision.reasoning)
-            if trade:
-                self._pair_cooldown[pair] = datetime.utcnow()
-                indicators = snapshot.model_dump(exclude_none=True, exclude={"timestamp"})
-                await self.memory.record_trade(trade, indicators, self._current_regime)
-
-        elif decision.action == ActionType.ADJUST:
-            position = self.paper_trader.positions.get(pair)
-            if position:
-                if decision.stop_loss:
-                    position.stop_loss = decision.stop_loss
-                if decision.take_profit:
-                    position.take_profit = decision.take_profit
-                logger.info(f"[{pair}] Adjusted: SL={position.stop_loss} TP={position.take_profit}")
 
     # --- Futures Data Loop ---
 

@@ -21,21 +21,21 @@ class Settings(BaseSettings):
 
     # Paper trading
     paper_trading: bool = True
-    initial_balance: float = 5000.0
+    initial_balance: float = 200000.0
 
     # API server
     api_port: int = 8080
     api_host: str = "0.0.0.0"
     cors_origin: str = "http://localhost:3000"
 
-    # Trading defaults (auto-optimized by Claude)
-    default_leverage: int = 3
-    max_leverage: int = 10
-    default_position_pct: float = 0.005  # 0.5% of capital
-    min_position_pct: float = 0.002      # 0.2%
-    max_position_pct: float = 0.015      # 1.5%
+    # Trading defaults — 1H strategy (backtest-optimized)
+    default_leverage: int = 10
+    max_leverage: int = 15
+    default_position_pct: float = 0.02   # 2% of capital
+    min_position_pct: float = 0.01       # 1%
+    max_position_pct: float = 0.03       # 3%
     max_open_positions: int = 5
-    min_score_to_enter: float = 0.6
+    min_score_to_enter: float = 0.65
 
     # Risk limits (NON-negotiable)
     max_risk_per_trade_pct: float = 0.01  # 1%
@@ -47,13 +47,13 @@ class Settings(BaseSettings):
     taker_fee: float = 0.0005   # 0.05%
     maker_fee: float = 0.0002   # 0.02%
     slippage_major: float = 0.0001  # 0.01% BTC/ETH
-    slippage_alt: float = 0.0003    # 0.03% altcoins
+    slippage_alt: float = 0.0002    # 0.02% altcoins (matches backtest)
 
     # Timeframes
-    analysis_interval_seconds: int = 45    # balanced: fast enough to catch moves, slow enough to save API costs
+    analysis_interval_seconds: int = 60    # 1H strategy: check every 60s for new 1H candle closes
     optimization_interval_hours: int = 4   # optimize more frequently
     deep_analysis_interval_hours: int = 2  # learn faster
-    sentiment_poll_minutes: int = 15
+    sentiment_poll_minutes: int = 20       # CryptoPanic: 3000/month limit → 72/day × 30 = 2160
     funding_rate_check_minutes: int = 30   # check funding rates
     futures_data_poll_minutes: int = 5     # OI + liquidations
 
