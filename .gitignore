@@ -17,3 +17,7 @@ __pycache__/
 venv/
 bot/db/*.db
 bot/bot.log
+
+# Backtest cache (large CSV files, not needed in production)
+bot/backtest/cache/
+bot/backtest/results*.json
