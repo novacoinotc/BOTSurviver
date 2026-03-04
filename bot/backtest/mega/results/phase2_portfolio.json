@@ -1,0 +1,354 @@
+{
+  "total_pnl": 51943.73,
+  "return_pct": 103.89,
+  "total_trades": 3196,
+  "win_rate": 38.5,
+  "n_pairs": 19,
+  "n_profitable": 19,
+  "green_months": 22,
+  "total_months": 25,
+  "pair_details": [
+    {
+      "pair": "SUIUSDT",
+      "strategy": "mtf_adx_trending",
+      "pnl_scaled": 5656.16,
+      "pnl_full": 107466.98,
+      "pf": 1.972,
+      "trades": 172,
+      "win_rate": 20.3,
+      "max_dd": -16.16
+    },
+    {
+      "pair": "NEARUSDT",
+      "strategy": "vs_ema_aligned",
+      "pnl_scaled": 4042.41,
+      "pnl_full": 76805.83,
+      "pf": 1.8095,
+      "trades": 112,
+      "win_rate": 44.6,
+      "max_dd": -8.87
+    },
+    {
+      "pair": "ADAUSDT",
+      "strategy": "regime_rsi_neutral",
+      "pnl_scaled": 3843.27,
+      "pnl_full": 73022.13,
+      "pf": 1.6923,
+      "trades": 77,
+      "win_rate": 40.3,
+      "max_dd": -10.15
+    },
+    {
+      "pair": "DOGEUSDT",
+      "strategy": "regime_rsi_neutral",
+      "pnl_scaled": 3808.96,
+      "pnl_full": 72370.33,
+      "pf": 2.0305,
+      "trades": 235,
+      "win_rate": 14.9,
+      "max_dd": -10.35
+    },
+    {
+      "pair": "APTUSDT",
+      "strategy": "mtf_adx_trending",
+      "pnl_scaled": 3143.1,
+      "pnl_full": 59718.95,
+      "pf": 1.7058,
+      "trades": 263,
+      "win_rate": 51.7,
+      "max_dd": -8.05
+    },
+    {
+      "pair": "ARBUSDT",
+      "strategy": "mtf_adx_trending",
+      "pnl_scaled": 3109.06,
+      "pnl_full": 59072.22,
+      "pf": 1.786,
+      "trades": 190,
+      "win_rate": 18.4,
+      "max_dd": -14.91
+    },
+    {
+      "pair": "XRPUSDT",
+      "strategy": "mtf_adx_trending",
+      "pnl_scaled": 2931.84,
+      "pnl_full": 55704.92,
+      "pf": 1.6723,
+      "trades": 244,
+      "win_rate": 31.6,
+      "max_dd": -6.18
+    },
+    {
+      "pair": "INJUSDT",
+      "strategy": "vs_adx_trending",
+      "pnl_scaled": 2760.78,
+      "pnl_full": 52454.88,
+      "pf": 1.974,
+      "trades": 131,
+      "win_rate": 55.0,
+      "max_dd": -5.72
+    },
+    {
+      "pair": "ATOMUSDT",
+      "strategy": "mtf_adx_trending",
+      "pnl_scaled": 2684.38,
+      "pnl_full": 51003.24,
+      "pf": 1.6759,
+      "trades": 165,
+      "win_rate": 26.7,
+      "max_dd": -11.35
+    },
+    {
+      "pair": "OPUSDT",
+      "strategy": "mtf_adx_trending",
+      "pnl_scaled": 2647.83,
+      "pnl_full": 50308.84,
+      "pf": 1.5497,
+      "trades": 233,
+      "win_rate": 35.6,
+      "max_dd": -7.28
+    },
+    {
+      "pair": "SOLUSDT",
+      "strategy": "regime_rsi_neutral",
+      "pnl_scaled": 2598.57,
+      "pnl_full": 49372.9,
+      "pf": 1.4244,
+      "trades": 179,
+      "win_rate": 55.3,
+      "max_dd": -13.38
+    },
+    {
+      "pair": "AVAXUSDT",
+      "strategy": "vs_ema_aligned",
+      "pnl_scaled": 2570.72,
+      "pnl_full": 48843.76,
+      "pf": 1.7783,
+      "trades": 170,
+      "win_rate": 54.1,
+      "max_dd": -12.73
+    },
+    {
+      "pair": "LTCUSDT",
+      "strategy": "vs_adx_trending",
+      "pnl_scaled": 2394.83,
+      "pnl_full": 45501.76,
+      "pf": 1.765,
+      "trades": 68,
+      "win_rate": 38.2,
+      "max_dd": -11.93
+    },
+    {
+      "pair": "ETHUSDT",
+      "strategy": "vs_adx_trending",
+      "pnl_scaled": 2091.08,
+      "pnl_full": 39730.54,
+      "pf": 1.8639,
+      "trades": 153,
+      "win_rate": 34.0,
+      "max_dd": -4.34
+    },
+    {
+      "pair": "DOTUSDT",
+      "strategy": "mtf_adx_trending",
+      "pnl_scaled": 1767.77,
+      "pnl_full": 33587.7,
+      "pf": 1.3691,
+      "trades": 219,
+      "win_rate": 52.5,
+      "max_dd": -10.24
+    },
+    {
+      "pair": "BNBUSDT",
+      "strategy": "mtf_adx_trending",
+      "pnl_scaled": 1748.42,
+      "pnl_full": 33220.0,
+      "pf": 1.6702,
+      "trades": 121,
+      "win_rate": 46.3,
+      "max_dd": -10.07
+    },
+    {
+      "pair": "FILUSDT",
+      "strategy": "vs_macd_confirms",
+      "pnl_scaled": 1638.64,
+      "pnl_full": 31134.07,
+      "pf": 1.4204,
+      "trades": 155,
+      "win_rate": 43.2,
+      "max_dd": -12.73
+    },
+    {
+      "pair": "LINKUSDT",
+      "strategy": "mtf_adx_trending",
+      "pnl_scaled": 1474.33,
+      "pnl_full": 28012.19,
+      "pf": 1.4409,
+      "trades": 135,
+      "win_rate": 43.7,
+      "max_dd": -13.7
+    },
+    {
+      "pair": "BTCUSDT",
+      "strategy": "mtf_adx_trending",
+      "pnl_scaled": 1031.55,
+      "pnl_full": 19599.54,
+      "pf": 1.4881,
+      "trades": 174,
+      "win_rate": 37.4,
+      "max_dd": -6.21
+    }
+  ],
+  "monthly": [
+    {
+      "month": "2024-03",
+      "pnl": 526.3105263157896,
+      "trades": 135,
+      "wins": 40
+    },
+    {
+      "month": "2024-04",
+      "pnl": 3439.4684210526316,
+      "trades": 153,
+      "wins": 73
+    },
+    {
+      "month": "2024-05",
+      "pnl": -986.8515789473684,
+      "trades": 124,
+      "wins": 26
+    },
+    {
+      "month": "2024-06",
+      "pnl": 2450.3157894736837,
+      "trades": 111,
+      "wins": 56
+    },
+    {
+      "month": "2024-07",
+      "pnl": 3381.226842105263,
+      "trades": 143,
+      "wins": 71
+    },
+    {
+      "month": "2024-08",
+      "pnl": 3190.7615789473684,
+      "trades": 143,
+      "wins": 68
+    },
+    {
+      "month": "2024-09",
+      "pnl": 1508.4810526315794,
+      "trades": 111,
+      "wins": 42
+    },
+    {
+      "month": "2024-10",
+      "pnl": 1097.7747368421053,
+      "trades": 113,
+      "wins": 40
+    },
+    {
+      "month": "2024-11",
+      "pnl": 3727.944210526316,
+      "trades": 148,
+      "wins": 67
+    },
+    {
+      "month": "2024-12",
+      "pnl": 1482.1673684210527,
+      "trades": 141,
+      "wins": 53
+    },
+    {
+      "month": "2025-01",
+      "pnl": 186.51894736842107,
+      "trades": 136,
+      "wins": 38
+    },
+    {
+      "month": "2025-02",
+      "pnl": 2294.04947368421,
+      "trades": 151,
+      "wins": 60
+    },
+    {
+      "month": "2025-03",
+      "pnl": 3831.8573684210523,
+      "trades": 146,
+      "wins": 63
+    },
+    {
+      "month": "2025-04",
+      "pnl": 2307.5826315789473,
+      "trades": 109,
+      "wins": 45
+    },
+    {
+      "month": "2025-05",
+      "pnl": 3370.2478947368427,
+      "trades": 125,
+      "wins": 52
+    },
+    {
+      "month": "2025-06",
+      "pnl": 1668.0931578947368,
+      "trades": 119,
+      "wins": 45
+    },
+    {
+      "month": "2025-07",
+      "pnl": 3322.162631578948,
+      "trades": 145,
+      "wins": 60
+    },
+    {
+      "month": "2025-08",
+      "pnl": -421.62421052631584,
+      "trades": 142,
+      "wins": 39
+    },
+    {
+      "month": "2025-09",
+      "pnl": 781.5178947368421,
+      "trades": 117,
+      "wins": 40
+    },
+    {
+      "month": "2025-10",
+      "pnl": 3505.6252631578946,
+      "trades": 150,
+      "wins": 48
+    },
+    {
+      "month": "2025-11",
+      "pnl": 3634.1652631578945,
+      "trades": 132,
+      "wins": 56
+    },
+    {
+      "month": "2025-12",
+      "pnl": -1889.2784210526315,
+      "trades": 112,
+      "wins": 22
+    },
+    {
+      "month": "2026-01",
+      "pnl": 8991.758421052633,
+      "trades": 140,
+      "wins": 79
+    },
+    {
+      "month": "2026-02",
+      "pnl": 453.6326315789472,
+      "trades": 145,
+      "wins": 45
+    },
+    {
+      "month": "2026-03",
+      "pnl": 89.81315789473686,
+      "trades": 5,
+      "wins": 1
+    }
+  ]
+}
