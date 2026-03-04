@@ -21,12 +21,30 @@ class PositionManager:
         self._today_start: Optional[str] = None
 
     async def initialize(self):
-        """Load open positions from DB and set today's starting balance."""
+        """Load open positions from DB and reconstruct the correct balance."""
         self._today_start = datetime.utcnow().strftime("%Y-%m-%d")
-        self._today_start_balance = self.trader.total_equity
+
+        # Reconstruct balance from trade history
+        # real_balance = initial_balance + SUM(closed PnL) - SUM(open margin + open entry_fee)
+        closed_trades = await self.db.get_trades(status="closed", limit=10000)
+        realized_pnl = sum(t["pnl"] for t in closed_trades)
 
         # Load open trades from DB
         open_trades = await self.db.get_open_trades()
+        open_margin_total = sum(t["margin_used"] + t.get("entry_fee", 0) for t in open_trades)
+
+        # Set the correct balance (initial + realized - locked in open positions)
+        correct_balance = self.trader.initial_balance + realized_pnl - open_margin_total
+        self.trader.balance = correct_balance
+        self.trader._peak_balance = max(correct_balance, self.trader.initial_balance)
+
+        logger.info(
+            f"Balance reconstructed: initial={self.trader.initial_balance:.2f} "
+            f"+ realized_pnl={realized_pnl:.2f} "
+            f"- open_margin={open_margin_total:.2f} "
+            f"= balance={correct_balance:.2f}"
+        )
+
         for t in open_trades:
             from core.models import Direction
             pos = Position(
@@ -45,6 +63,8 @@ class PositionManager:
             )
             self.trader.positions[t["pair"]] = pos
             logger.info(f"Restored open position: {t['pair']} {t['direction']}")
+
+        self._today_start_balance = self.trader.total_equity
 
     def get_open_positions(self) -> list[dict]:
         """Get all open positions as dicts."""

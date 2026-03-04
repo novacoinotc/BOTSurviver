@@ -35,6 +35,7 @@ class StreamManager:
         for pair in self.pairs:
             streams.append(f"{pair}@kline_1m")
             streams.append(f"{pair}@kline_5m")
+            streams.append(f"{pair}@kline_1h")
             streams.append(f"{pair}@bookTicker")
             streams.append(f"{pair}@aggTrade")
             streams.append(f"{pair}@markPrice@1s")  # funding rate + mark price

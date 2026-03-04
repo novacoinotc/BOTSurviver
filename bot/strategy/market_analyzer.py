@@ -50,23 +50,40 @@ class MarketAnalyzer:
         self._breaking_news = news
 
     def get_snapshot(self, pair: str) -> Optional[MarketSnapshot]:
-        """Generate a full market snapshot for a single pair."""
-        if not self.candles.has_enough_data(pair, min_candles=14):
-            return None
+        """Generate a full market snapshot for a single pair.
+
+        Primary indicators come from 1H candles (trading timeframe).
+        Real-time price comes from 1m data. 5m provides secondary context.
+        """
+        # Need 1H data for signal detection (50+ candles for EMA50)
+        if not self.candles.has_enough_data(pair, min_candles=50, timeframe="1h"):
+            # Fallback: check if we have 1m data at least (for price tracking)
+            if not self.candles.has_enough_data(pair, min_candles=14):
+                return None
+            # Have 1m but not enough 1h — create minimal snapshot for position tracking
+            price = self.candles.get_latest_price(pair)
+            if not price:
+                return None
+            return MarketSnapshot(
+                pair=pair,
+                price=price,
+                fear_greed=self._fear_greed,
+                timestamp=datetime.utcnow(),
+            )
 
         price = self.candles.get_latest_price(pair)
         if not price:
             return None
 
-        # Get indicator data from 1m candles
-        df_1m = self.candles.get_dataframe(pair, "1m")
-        indicators = calculate_all(df_1m)
+        # PRIMARY: Get indicator data from 1H candles (trading timeframe)
+        df_1h = self.candles.get_dataframe(pair, "1h")
+        indicators = calculate_all(df_1h)
 
-        # Get 5m multi-timeframe indicators
+        # SECONDARY: Get 5m multi-timeframe indicators
         df_5m = self.candles.get_dataframe(pair, "5m")
         indicators_5m = calculate_5m(df_5m)
 
-        # Price changes
+        # Price changes from 1m (real-time)
         change_1m = self.candles.get_price_change(pair, minutes=1)
         change_5m = self.candles.get_price_change(pair, minutes=5)
         change_1h = self.candles.get_price_change(pair, minutes=60)
@@ -84,6 +101,7 @@ class MarketAnalyzer:
             change_1m=round(change_1m * 100, 4) if change_1m else 0.0,
             change_5m=round(change_5m * 100, 4) if change_5m else 0.0,
             change_1h=round(change_1h * 100, 4) if change_1h else 0.0,
+            # All main indicators from 1H timeframe
             rsi_7=indicators.get("rsi_7"),
             rsi_14=indicators.get("rsi_14"),
             ema_9=indicators.get("ema_9"),
@@ -141,10 +159,13 @@ class MarketAnalyzer:
         return snapshot
 
     def detect_regime_fast(self, pair: str) -> MarketRegime:
-        """Fast regime detection from indicators (no Claude call needed)."""
-        df = self.candles.get_dataframe(pair, "1m")
-        if df.empty or len(df) < 21:
-            return MarketRegime.UNKNOWN
+        """Fast regime detection from 1H indicators (no Claude call needed)."""
+        df = self.candles.get_dataframe(pair, "1h")
+        if df.empty or len(df) < 50:
+            # Fallback to 1m if not enough 1h data
+            df = self.candles.get_dataframe(pair, "1m")
+            if df.empty or len(df) < 21:
+                return MarketRegime.UNKNOWN
 
         indicators = calculate_all(df)
         adx = indicators.get("adx", 0) or 0

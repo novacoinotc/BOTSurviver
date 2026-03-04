@@ -132,13 +132,18 @@ class CandleStore:
         sell_vol = total_vol - buy_vol
         return buy_vol - sell_vol
 
-    def has_enough_data(self, pair: str, min_candles: int = 14) -> bool:
+    def has_enough_data(self, pair: str, min_candles: int = 14, timeframe: str = "1m") -> bool:
         """Check if we have enough data to calculate indicators."""
-        return len(self._candles[pair]["1m"]) >= min_candles
+        return len(self._candles[pair][timeframe]) >= min_candles
 
     @property
     def pairs_with_data(self) -> list[str]:
         return [p for p in self._candles if self.has_enough_data(p)]
+
+    @property
+    def pairs_with_1h_data(self) -> list[str]:
+        """Pairs with enough 1H candles for indicator calculation (need 50+)."""
+        return [p for p in self._candles if self.has_enough_data(p, min_candles=50, timeframe="1h")]
 
     def get_candle_counts(self) -> dict[str, int]:
         """Get count of closed 1m candles per pair (for debugging)."""

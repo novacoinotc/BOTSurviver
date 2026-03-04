@@ -31,6 +31,7 @@ class RiskManager:
         has_position_for_pair: bool,
         circuit_breaker_active: bool,
         margin_ratio: float = 0.0,
+        current_positions: list[dict] = None,
     ) -> tuple[bool, str]:
         """Validate a trade decision. Returns (is_valid, rejection_reason)."""
 
@@ -63,6 +64,13 @@ class RiskManager:
             if open_positions >= max_pos:
                 return False, f"Max positions reached ({open_positions}/{max_pos})"
 
+            # Correlation check: max 3 positions in the same direction
+            if current_positions:
+                dir_value = "LONG" if decision.action == ActionType.ENTER_LONG else "SHORT"
+                same_dir = sum(1 for p in current_positions if p.get("direction") == dir_value)
+                if same_dir >= 3:
+                    return False, f"Max 3 {dir_value} positions (correlation risk)"
+
             # Confidence threshold
             min_score = self._get("min_score_to_enter", settings.min_score_to_enter)
             if decision.confidence < min_score:
@@ -92,13 +100,13 @@ class RiskManager:
             if not decision.take_profit or decision.take_profit <= 0:
                 return False, "Take profit is mandatory for every trade"
 
-            # Minimum SL distance check (prevent noise stop-outs)
+            # Minimum SL distance check (1H strategy uses 3% SL)
             leverage = decision.leverage or settings.default_leverage
             entry_approx = decision.entry_price or 0
             if entry_approx > 0 and decision.stop_loss > 0:
                 sl_distance_pct = abs(entry_approx - decision.stop_loss) / entry_approx
-                if sl_distance_pct < 0.004:  # 0.4% minimum SL distance
-                    return False, f"SL too tight: {sl_distance_pct:.2%} from entry (min 0.40%)"
+                if sl_distance_pct < 0.008:  # 0.8% minimum SL distance (1H uses 3%)
+                    return False, f"SL too tight: {sl_distance_pct:.2%} from entry (min 0.80%)"
 
                 # Actual risk calculation based on SL distance
                 actual_risk_pct = pos_pct * leverage * sl_distance_pct

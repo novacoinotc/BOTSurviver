@@ -10,12 +10,13 @@ logger = logging.getLogger(__name__)
 DEFAULT_PAIRS = [
     "BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT",
     "DOGEUSDT", "ADAUSDT", "AVAXUSDT", "DOTUSDT", "LINKUSDT",
-    "MATICUSDT", "SUIUSDT", "ARBUSDT", "OPUSDT", "APTUSDT",
+    "SUIUSDT", "ARBUSDT", "OPUSDT", "APTUSDT",
     "NEARUSDT", "LTCUSDT", "ATOMUSDT", "FILUSDT", "INJUSDT",
 ]
+# MATICUSDT removed — migrated to POLUSDT on Binance
 
 
-async def get_top_pairs(count: int = 20) -> list[str]:
+async def get_top_pairs(count: int = 19) -> list[str]:
     """Fetch top futures pairs by 24h volume from Binance."""
     try:
         client = Client(settings.binance_api_key, settings.binance_api_secret)

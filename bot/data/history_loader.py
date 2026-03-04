@@ -33,7 +33,7 @@ async def load_historical_candles(
         Total number of candles loaded
     """
     if timeframes is None:
-        timeframes = ["1m", "5m"]
+        timeframes = ["1m", "5m", "1h"]
 
     proxy = settings.proxy_url if settings.proxy_url else None
     if not proxy:

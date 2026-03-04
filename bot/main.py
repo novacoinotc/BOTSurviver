@@ -11,13 +11,12 @@ from config.settings import settings
 from core.engine import TradingEngine
 from api.server import app, set_engine
 
-# Configure logging
+# Configure logging — only StreamHandler; nohup redirects stdout to bot.log
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler("bot/bot.log", mode="a"),
     ],
 )
 

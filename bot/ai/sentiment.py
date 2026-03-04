@@ -11,7 +11,7 @@ from db.database import Database
 
 logger = logging.getLogger(__name__)
 
-CRYPTOPANIC_URL = "https://cryptopanic.com/api/v1/posts/"
+CRYPTOPANIC_URL = "https://cryptopanic.com/api/growth/v2/posts/"
 FEAR_GREED_URL = "https://api.alternative.me/fng/"
 
 
