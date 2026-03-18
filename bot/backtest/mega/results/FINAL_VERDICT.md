@@ -6,29 +6,29 @@
 |-------|----------|-----------|----|----|-----------|-------------|
 | Phase 1 | volume_spike | $231,069 | 1.29 | 48% | 1H | ROBUST |
 | Phase 2 | vs_ema_aligned (combo) | $69,000 (best pair) | — | — | 1H | ROBUST |
-| Phase 3 | heikin_ashi_trend | $+173,593 | 1.19 | 24.2% | — | ROBUST |
-|         | SL=2% TP=6% Trail=0% Lev=10x CD=48bars | | | | | |
+| Phase 3 | heikin_ashi_trend | $+116,805 | 1.27 | 16.9% | — | ROBUST |
+|         | SL=2% TP=10% Trail=0% Lev=5x CD=48bars | | | | | |
 
 ## Analysis
 
 ### Phase 3 Strategy Ranking
 
-1. **volume_spike**: 19/19 pairs profitable, median PnL=$+55, avg PF=1.07
-2. **ema_ribbon_expansion**: 19/19 pairs profitable, median PnL=$-314, avg PF=0.97
-3. **momentum_exhaustion**: 19/19 pairs profitable, median PnL=$-629, avg PF=0.91
-4. **heikin_ashi_trend**: 19/19 pairs profitable, median PnL=$-630, avg PF=0.97
-5. **bollinger_bounce**: 19/19 pairs profitable, median PnL=$-2,481, avg PF=0.92
-6. **stoch_reversal**: 19/19 pairs profitable, median PnL=$-2,575, avg PF=0.88
-7. **rsi_divergence_entry**: 19/19 pairs profitable, median PnL=$-2,736, avg PF=0.84
-8. **zscore_reversion**: 19/19 pairs profitable, median PnL=$-4,359, avg PF=0.79
-9. **btc_correlation_lag**: 18/18 pairs profitable, median PnL=$-272, avg PF=1.01
-10. **regime_adaptive**: 18/19 pairs profitable, median PnL=$-1,904, avg PF=0.86
+1. **volume_spike**: 19/19 pairs profitable, median PnL=$+89, avg PF=1.07
+2. **ema_ribbon_expansion**: 19/19 pairs profitable, median PnL=$-289, avg PF=0.98
+3. **heikin_ashi_trend**: 19/19 pairs profitable, median PnL=$-605, avg PF=0.97
+4. **momentum_exhaustion**: 19/19 pairs profitable, median PnL=$-641, avg PF=0.91
+5. **bollinger_bounce**: 19/19 pairs profitable, median PnL=$-2,304, avg PF=0.93
+6. **stoch_reversal**: 19/19 pairs profitable, median PnL=$-2,595, avg PF=0.87
+7. **rsi_divergence_entry**: 19/19 pairs profitable, median PnL=$-2,612, avg PF=0.77
+8. **zscore_reversion**: 19/19 pairs profitable, median PnL=$-3,028, avg PF=0.91
+9. **btc_correlation_lag**: 18/18 pairs profitable, median PnL=$-265, avg PF=1.01
+10. **regime_adaptive**: 18/19 pairs profitable, median PnL=$-1,898, avg PF=0.86
 
 ### Multi-Timeframe Comparison
 
-- **15m**: 273546 configs tested, 89638 profitable (33%), total PnL=$-556,195,123
-- **1h**: 248724 configs tested, 76494 profitable (31%), total PnL=$-560,303,092
-- **4h**: 278100 configs tested, 103270 profitable (37%), total PnL=$-295,099,136
+- **15m**: 273546 configs tested, 92429 profitable (34%), total PnL=$-531,536,956
+- **1h**: 248724 configs tested, 76145 profitable (31%), total PnL=$-559,222,533
+- **4h**: 278100 configs tested, 104694 profitable (38%), total PnL=$-287,120,251
 
 ### Walk-Forward Results
 
@@ -44,7 +44,7 @@ Based on cross-phase analysis:
    - SL=3% TP=4% Trail=6% CD=48h Lev=10x Pos=2%
    - $231K total PnL, PF=1.29, WR=48%
 
-2. **Phase 3 contender**: heikin_ashi_trend ($+495,128, PF=1.29)
+2. **Phase 3 contender**: heikin_ashi_trend ($+500,004, PF=1.29)
    - Needs further paper trading validation before deployment
 
 ---

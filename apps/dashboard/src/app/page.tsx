@@ -51,7 +51,7 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Overview</h1>
+      <h1 className="text-xl md:text-2xl font-bold">Overview</h1>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -61,7 +61,7 @@ export default function OverviewPage() {
             <Wallet className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold font-mono">
+            <p className="text-lg md:text-2xl font-bold font-mono">
               ${(status?.total_equity ?? 0).toFixed(2)}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -95,7 +95,7 @@ export default function OverviewPage() {
             <Target className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold font-mono">
+            <p className="text-lg md:text-2xl font-bold font-mono">
               {((analytics?.win_rate ?? 0) * 100).toFixed(1)}%
             </p>
             <p className="text-xs text-muted-foreground">
@@ -110,7 +110,7 @@ export default function OverviewPage() {
             <BarChart3 className="w-4 h-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold font-mono text-red-400">
+            <p className="text-lg md:text-2xl font-bold font-mono text-red-400">
               {(status?.drawdown_pct ?? 0).toFixed(2)}%
             </p>
             <p className="text-xs text-muted-foreground">
