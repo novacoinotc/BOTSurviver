@@ -15,40 +15,40 @@ export default function MemoryPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold flex items-center gap-2">
-        <Brain className="w-6 h-6" />
+      <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+        <Brain className="w-5 h-5 md:w-6 md:h-6" />
         Bot Memory
       </h1>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Total Memories</p>
-            <p className="text-2xl font-bold font-mono">{stats?.total_memories ?? 0}</p>
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Total Memories</p>
+            <p className="text-xl md:text-2xl font-bold font-mono">{stats?.total_memories ?? 0}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">With Lessons</p>
-            <p className="text-2xl font-bold font-mono">{stats?.memories_with_lessons ?? 0}</p>
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">With Lessons</p>
+            <p className="text-xl md:text-2xl font-bold font-mono">{stats?.memories_with_lessons ?? 0}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Winning</p>
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Winning</p>
             <p className="text-2xl font-bold font-mono text-green-400">{stats?.winning_trades ?? 0}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Losing</p>
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Losing</p>
             <p className="text-2xl font-bold font-mono text-red-400">{stats?.losing_trades ?? 0}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Active Rules</p>
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Active Rules</p>
             <p className="text-2xl font-bold font-mono text-blue-400">{stats?.active_rules ?? 0}</p>
           </CardContent>
         </Card>
@@ -106,28 +106,25 @@ export default function MemoryPage() {
               {memories.map((mem) => {
                 const isPnlPositive = mem.pnl > 0;
                 return (
-                  <div key={mem.id} className="p-4 rounded-lg border border-border">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {isPnlPositive ? (
-                          <CheckCircle className="w-4 h-4 text-green-400" />
-                        ) : (
-                          <XCircle className="w-4 h-4 text-red-400" />
-                        )}
-                        <span className="font-mono font-medium">{mem.pair}</span>
-                        <Badge
-                          variant="secondary"
-                          className={mem.direction === "LONG"
-                            ? "bg-green-500/20 text-green-400"
-                            : "bg-red-500/20 text-red-400"
-                          }
-                        >
-                          {mem.direction}
-                        </Badge>
-                        <Badge variant="secondary">{mem.market_regime}</Badge>
-                      </div>
-                      <span className={`font-mono text-sm ${isPnlPositive ? "text-green-400" : "text-red-400"}`}>
-                        {isPnlPositive ? "+" : ""}${mem.pnl.toFixed(4)} ({(mem.pnl_pct * 100).toFixed(2)}%)
+                  <div key={mem.id} className="p-3 md:p-4 rounded-lg border border-border">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {isPnlPositive ? (
+                        <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                      )}
+                      <span className="font-mono font-medium text-sm">{mem.pair}</span>
+                      <Badge
+                        variant="secondary"
+                        className={`text-xs ${mem.direction === "LONG"
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-red-500/20 text-red-400"
+                        }`}
+                      >
+                        {mem.direction}
+                      </Badge>
+                      <span className={`font-mono text-sm ml-auto ${isPnlPositive ? "text-green-400" : "text-red-400"}`}>
+                        {isPnlPositive ? "+" : ""}${mem.pnl.toFixed(2)} ({(mem.pnl_pct * 100).toFixed(2)}%)
                       </span>
                     </div>
 

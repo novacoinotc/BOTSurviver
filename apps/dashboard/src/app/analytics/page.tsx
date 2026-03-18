@@ -53,71 +53,71 @@ export default function AnalyticsPage() {
     })) ?? [];
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold flex items-center gap-2">
-        <BarChart3 className="w-6 h-6" />
+    <div className="space-y-4 md:space-y-6">
+      <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+        <BarChart3 className="w-5 h-5 md:w-6 md:h-6" />
         Analytics
       </h1>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Total Trades</p>
-            <p className="text-2xl font-bold font-mono">{data.total_trades}</p>
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Total Trades</p>
+            <p className="text-xl md:text-2xl font-bold font-mono">{data.total_trades}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Win Rate</p>
-            <p className="text-2xl font-bold font-mono">{(data.win_rate * 100).toFixed(1)}%</p>
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Win Rate</p>
+            <p className="text-xl md:text-2xl font-bold font-mono">{(data.win_rate * 100).toFixed(1)}%</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Profit Factor</p>
-            <p className="text-2xl font-bold font-mono">{data.profit_factor.toFixed(2)}</p>
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Profit Factor</p>
+            <p className="text-xl md:text-2xl font-bold font-mono">{data.profit_factor.toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Sharpe Ratio</p>
-            <p className="text-2xl font-bold font-mono">{data.sharpe_ratio.toFixed(2)}</p>
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Sharpe Ratio</p>
+            <p className="text-xl md:text-2xl font-bold font-mono">{data.sharpe_ratio.toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Max Drawdown</p>
-            <p className="text-2xl font-bold font-mono text-red-400">{data.max_drawdown_pct.toFixed(2)}%</p>
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Max Drawdown</p>
+            <p className="text-xl md:text-2xl font-bold font-mono text-red-400">{data.max_drawdown_pct.toFixed(2)}%</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Total PnL</p>
-            <p className={`text-xl font-bold font-mono ${data.total_pnl >= 0 ? "text-green-400" : "text-red-400"}`}>
-              {data.total_pnl >= 0 ? "+" : ""}${data.total_pnl.toFixed(4)}
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Total PnL</p>
+            <p className={`text-lg md:text-xl font-bold font-mono ${data.total_pnl >= 0 ? "text-green-400" : "text-red-400"}`}>
+              {data.total_pnl >= 0 ? "+" : ""}${data.total_pnl.toFixed(2)}
             </p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Avg Win</p>
-            <p className="text-xl font-bold font-mono text-green-400">${data.avg_win.toFixed(4)}</p>
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Avg Win</p>
+            <p className="text-lg md:text-xl font-bold font-mono text-green-400">${data.avg_win.toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Avg Loss</p>
-            <p className="text-xl font-bold font-mono text-red-400">${data.avg_loss.toFixed(4)}</p>
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Avg Loss</p>
+            <p className="text-lg md:text-xl font-bold font-mono text-red-400">${data.avg_loss.toFixed(2)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
-            <p className="text-sm text-muted-foreground">Win/Loss</p>
-            <p className="text-xl font-bold font-mono">
+          <CardContent className="pt-4 px-3 md:px-6">
+            <p className="text-xs md:text-sm text-muted-foreground">Win/Loss</p>
+            <p className="text-lg md:text-xl font-bold font-mono">
               {data.winning_trades}/{data.losing_trades}
             </p>
           </CardContent>
@@ -125,26 +125,27 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-2 gap-4 md:gap-6">
         {/* PnL by Pair */}
         <Card>
-          <CardHeader>
-            <CardTitle>PnL by Pair</CardTitle>
+          <CardHeader className="px-3 md:px-6">
+            <CardTitle className="text-sm md:text-base">PnL by Pair</CardTitle>
           </CardHeader>
-          <CardContent className="h-72">
+          <CardContent className="h-72 px-1 md:px-6">
             {pairData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={pairData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <YAxis type="category" dataKey="pair" width={50} stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                  <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                  <YAxis type="category" dataKey="pair" width={40} stroke="hsl(var(--muted-foreground))" fontSize={10} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
+                      fontSize: "12px",
                     }}
-                    formatter={(value) => [`$${Number(value).toFixed(4)}`, "PnL"]}
+                    formatter={(value) => [`$${Number(value).toFixed(2)}`, "PnL"]}
                   />
                   <Bar dataKey="pnl" fill="hsl(142, 71%, 45%)">
                     {pairData.map((entry, index) => (
@@ -164,21 +165,22 @@ export default function AnalyticsPage() {
 
         {/* Daily PnL */}
         <Card>
-          <CardHeader>
-            <CardTitle>Daily PnL</CardTitle>
+          <CardHeader className="px-3 md:px-6">
+            <CardTitle className="text-sm md:text-base">Daily PnL</CardTitle>
           </CardHeader>
-          <CardContent className="h-72">
+          <CardContent className="h-72 px-1 md:px-6">
             {dailyPnl.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dailyPnl}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
+                      fontSize: "12px",
                     }}
                   />
                   <Bar dataKey="pnl">
@@ -201,20 +203,21 @@ export default function AnalyticsPage() {
       {/* PnL by Hour */}
       {hourData.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle>PnL by Hour (UTC)</CardTitle>
+          <CardHeader className="px-3 md:px-6">
+            <CardTitle className="text-sm md:text-base">PnL by Hour (UTC)</CardTitle>
           </CardHeader>
-          <CardContent className="h-64">
+          <CardContent className="h-64 px-1 md:px-6">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={hourData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="hour" stroke="hsl(var(--muted-foreground))" fontSize={11} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <XAxis dataKey="hour" stroke="hsl(var(--muted-foreground))" fontSize={10} />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
+                    fontSize: "12px",
                   }}
                 />
                 <Bar dataKey="pnl">
@@ -231,21 +234,21 @@ export default function AnalyticsPage() {
         </Card>
       )}
 
-      {/* Per-Pair Detail Table */}
+      {/* Per-Pair Detail */}
       <Card>
-        <CardHeader>
-          <CardTitle>Performance by Pair</CardTitle>
+        <CardHeader className="px-3 md:px-6">
+          <CardTitle className="text-sm md:text-base">Performance by Pair</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 md:px-6">
           <div className="space-y-2">
             {pairData.map((p) => (
-              <div key={p.pair} className="flex items-center justify-between p-2 rounded bg-accent/30">
-                <span className="font-mono font-medium">{p.pair}</span>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="text-muted-foreground">{p.trades} trades</span>
-                  <span className="text-muted-foreground">WR: {p.winRate.toFixed(0)}%</span>
+              <div key={p.pair} className="flex items-center justify-between gap-2 p-2 rounded bg-accent/30">
+                <span className="font-mono font-medium text-sm">{p.pair}</span>
+                <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm">
+                  <span className="text-muted-foreground">{p.trades}t</span>
+                  <span className="text-muted-foreground hidden sm:inline">WR: {p.winRate.toFixed(0)}%</span>
                   <span className={`font-mono ${p.pnl >= 0 ? "text-green-400" : "text-red-400"}`}>
-                    {p.pnl >= 0 ? "+" : ""}${p.pnl.toFixed(4)}
+                    {p.pnl >= 0 ? "+" : ""}${p.pnl.toFixed(2)}
                   </span>
                 </div>
               </div>
