@@ -62,7 +62,7 @@ export function Sidebar() {
             <Bot className="w-6 h-6 text-green-400" />
             <span className="font-bold text-lg">ScalpBot</span>
           </Link>
-          <p className="text-xs text-muted-foreground mt-1">Adaptive Futures Scalper</p>
+          <p className="text-xs text-muted-foreground mt-1">1H Volume Spike Strategy</p>
         </div>
 
         <nav className="flex-1 p-2 space-y-1">
