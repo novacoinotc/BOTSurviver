@@ -50,9 +50,11 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "w-56 border-r border-border bg-card flex flex-col h-screen sticky top-0 z-40",
-          "max-md:fixed max-md:transition-transform max-md:duration-200",
-          open ? "max-md:translate-x-0" : "max-md:-translate-x-full"
+          "w-56 border-r border-border bg-card flex-col h-screen z-40",
+          // Desktop: static in flex layout
+          "hidden md:flex md:sticky md:top-0",
+          // Mobile: fixed overlay, only visible when open
+          open && "!flex fixed top-0 left-0 transition-transform duration-200"
         )}
       >
         <div className="p-4 border-b border-border">
