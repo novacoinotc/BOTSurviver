@@ -147,11 +147,14 @@ class TradingEngine:
         )
 
         # Run main loops concurrently
+        # NOTE: _deep_analysis_loop and _optimization_loop disabled —
+        # backtest-winning params must remain fixed (1.1M sim proven).
+        # Claude was changing params based on <30 trades = overfitting to noise.
         await asyncio.gather(
             self._analysis_loop(),
             self._sentiment_loop(),
-            self._deep_analysis_loop(),
-            self._optimization_loop(),
+            # self._deep_analysis_loop(),   # DISABLED: was proposing rules from too few trades
+            # self._optimization_loop(),    # DISABLED: was degrading backtest-proven params
             self._daily_stats_loop(),
             self._health_check_loop(),
             self._futures_data_loop(),
